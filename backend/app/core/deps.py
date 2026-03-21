@@ -1,17 +1,15 @@
+from typing import Callable
+
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-
 from app.database import get_db
 from app.models.user import User
 from app.core.security import decode_access_token
 
-
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
-
-
 
 
 async def get_current_user(
@@ -37,8 +35,6 @@ async def get_current_user(
     return user
 
 
-
-
 def require_roles(*roles: str) -> Callable:
     """
     Dependency factory. Returns a FastAPI dependency that:
@@ -46,7 +42,6 @@ def require_roles(*roles: str) -> Callable:
     - Checks that current_user.role is in the allowed roles set
     - Raises HTTP 403 with detail "Forbidden" if not
     - Returns the current_user if allowed
-
 
     Usage: Depends(require_roles("Admin", "Approver"))
     """
@@ -57,6 +52,5 @@ def require_roles(*roles: str) -> Callable:
                 detail="Forbidden",
             )
         return current_user
-
 
     return dependency

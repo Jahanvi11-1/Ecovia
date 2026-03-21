@@ -1,18 +1,14 @@
+import os
 from datetime import datetime, timedelta, timezone
-
 
 from fastapi import HTTPException, status
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 
-
 _pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 
 ALGORITHM = "HS256"
 DEFAULT_EXPIRE_MINUTES = 60
-
-
 
 
 def hash_password(password: str) -> str:
@@ -20,13 +16,9 @@ def hash_password(password: str) -> str:
     return _pwd_context.hash(password)
 
 
-
-
 def verify_password(plain: str, hashed: str) -> bool:
     """Return True if *plain* matches the bcrypt *hashed* value."""
     return _pwd_context.verify(plain, hashed)
-
-
 
 
 def create_access_token(data: dict, expires_delta: timedelta = None) -> str:
@@ -38,8 +30,6 @@ def create_access_token(data: dict, expires_delta: timedelta = None) -> str:
     )
     payload["exp"] = expire
     return jwt.encode(payload, secret_key, algorithm=ALGORITHM)
-
-
 
 
 def decode_access_token(token: str) -> dict:
