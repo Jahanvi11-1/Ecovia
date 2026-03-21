@@ -2,9 +2,7 @@ import React, { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import api from '../../api/client'
 
-
 const ROLES = ['Engineering User', 'Approver', 'Operations User', 'Admin']
-
 
 export default function SignupPage() {
   const navigate = useNavigate()
@@ -13,9 +11,7 @@ export default function SignupPage() {
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
 
-
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
-
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -43,13 +39,11 @@ export default function SignupPage() {
     }
   }
 
-
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center">
       <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md">
         <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center">Ecovia PLM</h1>
         <h2 className="text-lg font-semibold text-gray-600 mb-4 text-center">Create Account</h2>
-
 
         {success && (
           <div className="bg-green-50 border border-green-200 text-green-700 rounded-lg px-4 py-3 mb-4 text-sm">
@@ -61,7 +55,6 @@ export default function SignupPage() {
             {errors.general}
           </div>
         )}
-
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -120,7 +113,6 @@ export default function SignupPage() {
           </button>
         </form>
 
-
         <p className="mt-4 text-center text-sm text-gray-500">
           Already have an account?{' '}
           <Link to="/login" className="text-blue-600 hover:underline">Sign in</Link>
@@ -129,6 +121,3 @@ export default function SignupPage() {
     </div>
   )
 }
-
-
-

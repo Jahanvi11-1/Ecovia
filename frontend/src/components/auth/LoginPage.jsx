@@ -3,7 +3,6 @@ import { useNavigate, Link } from 'react-router-dom'
 import api from '../../api/client'
 import useAuthStore from '../../store/authStore'
 
-
 export default function LoginPage() {
   const navigate = useNavigate()
   const login = useAuthStore((s) => s.login)
@@ -11,9 +10,7 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
-
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -30,20 +27,17 @@ export default function LoginPage() {
     }
   }
 
-
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center">
       <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md">
         <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center">Ecovia PLM</h1>
         <h2 className="text-lg font-semibold text-gray-600 mb-4 text-center">Sign In</h2>
 
-
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 mb-4 text-sm">
             {error}
           </div>
         )}
-
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -75,7 +69,6 @@ export default function LoginPage() {
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
-
 
         <div className="mt-4 text-center text-sm text-gray-500 space-y-1">
           <p>

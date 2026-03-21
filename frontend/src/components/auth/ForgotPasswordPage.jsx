@@ -2,13 +2,11 @@ import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import api from '../../api/client'
 
-
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -25,13 +23,11 @@ export default function ForgotPasswordPage() {
     }
   }
 
-
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center">
       <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md">
         <h1 className="text-2xl font-bold text-gray-800 mb-2 text-center">Ecovia PLM</h1>
         <h2 className="text-lg font-semibold text-gray-600 mb-4 text-center">Reset Password</h2>
-
 
         {message && (
           <div className="bg-green-50 border border-green-200 text-green-700 rounded-lg px-4 py-3 mb-4 text-sm">
@@ -43,7 +39,6 @@ export default function ForgotPasswordPage() {
             {error}
           </div>
         )}
-
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -64,7 +59,6 @@ export default function ForgotPasswordPage() {
             {loading ? 'Sending...' : 'Send Reset Link'}
           </button>
         </form>
-
 
         <p className="mt-4 text-center text-sm text-gray-500">
           <Link to="/login" className="text-blue-600 hover:underline">Back to login</Link>
