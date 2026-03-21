@@ -2,17 +2,13 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-
 from app.database import get_db
 from app.models.user import User
 from app.schemas.auth import SignupRequest, SignupResponse, LoginRequest, TokenResponse, UserResponse, ForgotPasswordRequest
 from app.core.security import hash_password, verify_password, create_access_token
 from app.core.deps import get_current_user
 
-
 router = APIRouter(prefix="/api/auth", tags=["auth"])
-
-
 
 
 @router.post("/signup", response_model=SignupResponse, status_code=status.HTTP_201_CREATED)
@@ -24,7 +20,6 @@ async def signup(payload: SignupRequest, db: AsyncSession = Depends(get_db)):
             detail="Login ID must be between 6 and 12 characters",
         )
 
-
     # Check login_id uniqueness
     result = await db.execute(select(User).where(User.login_id == payload.login_id))
     if result.scalar_one_or_none() is not None:
@@ -33,7 +28,6 @@ async def signup(payload: SignupRequest, db: AsyncSession = Depends(get_db)):
             detail="Login ID already exists",
         )
 
-
     # Check email uniqueness
     result = await db.execute(select(User).where(User.email == payload.email))
     if result.scalar_one_or_none() is not None:
@@ -41,7 +35,6 @@ async def signup(payload: SignupRequest, db: AsyncSession = Depends(get_db)):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email already exists",
         )
-
 
     # Create user
     new_user = User(
@@ -54,7 +47,6 @@ async def signup(payload: SignupRequest, db: AsyncSession = Depends(get_db)):
     await db.commit()
     await db.refresh(new_user)
 
-
     return SignupResponse(
         user_id=new_user.user_id,
         login_id=new_user.login_id,
@@ -63,13 +55,10 @@ async def signup(payload: SignupRequest, db: AsyncSession = Depends(get_db)):
     )
 
 
-
-
 @router.post("/login", response_model=TokenResponse)
 async def login(payload: LoginRequest, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(User).where(User.login_id == payload.login_id))
     user = result.scalar_one_or_none()
-
 
     if user is None or not verify_password(payload.password, user.password_hash):
         raise HTTPException(
@@ -77,15 +66,12 @@ async def login(payload: LoginRequest, db: AsyncSession = Depends(get_db)):
             detail="Invalid Login Id or Password",
         )
 
-
     token = create_access_token({
         "sub": str(user.user_id),
         "role": user.role,
         "login_id": user.login_id,
     })
     return TokenResponse(access_token=token)
-
-
 
 
 @router.get("/me", response_model=UserResponse)
@@ -96,8 +82,6 @@ async def me(current_user: User = Depends(get_current_user)):
         email=current_user.email,
         role=current_user.role,
     )
-
-
 
 
 @router.post("/forgot-password")
