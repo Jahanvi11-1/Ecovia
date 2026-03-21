@@ -1,10 +1,8 @@
 import axios from 'axios'
 
-
 const api = axios.create({
   baseURL: '/api',
 })
-
 
 // Attach JWT token from localStorage on every request
 api.interceptors.request.use((config) => {
@@ -14,7 +12,6 @@ api.interceptors.request.use((config) => {
   }
   return config
 })
-
 
 // Redirect to /login on 401
 api.interceptors.response.use(
@@ -27,6 +24,5 @@ api.interceptors.response.use(
     return Promise.reject(error)
   }
 )
-
 
 export default api
