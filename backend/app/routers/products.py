@@ -61,7 +61,7 @@ async def create_product(
 @router.get("/", response_model=PaginatedProductsOut)
 async def list_products(
     page: int = Query(1, ge=1),
-    limit: int = Query(50, ge=1, le=100),
+    limit: int = Query(50, ge=1, le=10000),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
