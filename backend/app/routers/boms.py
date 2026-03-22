@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
-
+from typing import Optional
 from app.database import get_db
 from app.core.deps import get_current_user
 from app.models.bom import Bom, BomComponent, BomOperation
@@ -212,3 +212,93 @@ async def remove_operation(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Operation not found")
     await db.delete(op)
     await db.commit()
+
+from pydantic import BaseModel
+
+# Internal schema for the update payload
+class ComponentUpdate(BaseModel):
+    quantity: float
+
+@router.put("/{bom_id}/components/{component_id}", response_model=BomComponentOut)
+async def update_component(
+    bom_id: int,
+    component_id: int,
+    payload: ComponentUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    # 1. Verify the BoM exists and is not Archived
+    result = await db.execute(select(Bom).where(Bom.bom_id == bom_id))
+    bom = result.scalar_one_or_none()
+    
+    if bom is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="BoM not found")
+    if bom.status == "Archived":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, 
+            detail="Cannot modify a component in an Archived BoM"
+        )
+
+    # 2. Find the specific component belonging to this BoM
+    comp_result = await db.execute(
+        select(BomComponent).where(
+            BomComponent.component_id == component_id, 
+            BomComponent.bom_id == bom_id
+        )
+    )
+    comp = comp_result.scalar_one_or_none()
+    
+    if comp is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Component not found")
+
+    # 3. Update the quantity and commit
+    comp.quantity = payload.quantity
+    await db.commit()
+    await db.refresh(comp)
+    
+    return BomComponentOut.model_validate(comp)
+
+# Add this schema at the top of boms.py with other schemas
+class OperationUpdate(BaseModel):
+    work_center: Optional[str] = None
+    operation_time_mins: Optional[int] = None
+    sequence_order: Optional[int] = None
+
+@router.put("/{bom_id}/operations/{operation_id}", response_model=BomOperationOut)
+async def update_operation(
+    bom_id: int,
+    operation_id: int,
+    payload: OperationUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    # 1. Validation: Is the BoM Active?
+    result = await db.execute(select(Bom).where(Bom.bom_id == bom_id))
+    bom = result.scalar_one_or_none()
+    if not bom:
+        raise HTTPException(status_code=404, detail="BoM not found")
+    if bom.status == "Archived":
+        raise HTTPException(status_code=409, detail="Cannot modify an Archived BoM")
+
+    # 2. Find the Operation
+    op_result = await db.execute(
+        select(BomOperation).where(
+            BomOperation.operation_id == operation_id, 
+            BomOperation.bom_id == bom_id
+        )
+    )
+    op = op_result.scalar_one_or_none()
+    if not op:
+        raise HTTPException(status_code=404, detail="Operation not found")
+
+    # 3. Apply changes (Dynamic Update)
+    if payload.work_center is not None:
+        op.work_center = payload.work_center
+    if payload.operation_time_mins is not None:
+        op.operation_time_mins = payload.operation_time_mins
+    if payload.sequence_order is not None:
+        op.sequence_order = payload.sequence_order
+
+    await db.commit()
+    await db.refresh(op)
+    return BomOperationOut.model_validate(op)

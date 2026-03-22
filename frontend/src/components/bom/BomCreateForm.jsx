@@ -30,7 +30,7 @@ export default function BomCreateForm() {
   const [tab, setTab] = useState('components')
   const [components, setComponents] = useState([])
   const [operations, setOperations] = useState([])
-  const [newComp, setNewComp] = useState({ product_id: '', quantity: '', unit_of_measure: 'Units' })
+  const [newComp, setNewComp] = useState({ product_id: '', quantity: '1', unit_of_measure: 'Units' })
   const [newOp, setNewOp] = useState({ work_center: '', operation_time_mins: '', sequence_order: '' })
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
@@ -53,7 +53,7 @@ export default function BomCreateForm() {
   const addComponent = () => {
     if (!newComp.product_id || !newComp.quantity) return
     setComponents((c) => [...c, { ...newComp, quantity: parseFloat(newComp.quantity) }])
-    setNewComp({ product_id: '', quantity: '', unit_of_measure: 'Units' })
+    setNewComp({ product_id: '', quantity: '1', unit_of_measure: 'Units' })
   }
 
   const removeComponent = (i) => setComponents((c) => c.filter((_, idx) => idx !== i))
