@@ -21,11 +21,33 @@ export default function ProductList() {
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState('list') // default view §5.12
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalCount, setTotalCount] = useState(0)
+  const pageSize = 50
   const navigate = useNavigate()
 
   useEffect(() => {
-    api.get('/products/').then((res) => setProducts(res.data)).finally(() => setLoading(false))
-  }, [])
+    fetchProducts()
+  }, [currentPage, search])
+
+  const fetchProducts = async () => {
+    setLoading(true)
+    try {
+      const params = new URLSearchParams({
+        page: currentPage,
+        limit: pageSize,
+      })
+      const response = await api.get(`/products/?${params}`)
+      setProducts(response.data.items)
+      setTotalCount(response.data.total)
+      setTotalPages(response.data.pages)
+    } catch (error) {
+      console.error('Error fetching products:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const filtered = products.filter((p) => {
     if (!search) return true
@@ -239,8 +261,57 @@ export default function ProductList() {
           )}
 
         </div>
+        
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            gap: 8, 
+            marginTop: 20,
+            padding: '12px 0'
+          }}>
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+              style={{
+                padding: '6px 12px',
+                border: '1px solid var(--border)',
+                borderRadius: 6,
+                background: currentPage === 1 ? 'var(--bg-muted)' : 'var(--surface)',
+                color: currentPage === 1 ? 'var(--text-muted)' : 'var(--text-primary)',
+                cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                fontSize: 13,
+              }}
+            >
+              Previous
+            </button>
+            
+            <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+              Page {currentPage} of {totalPages}
+            </span>
+            
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+              style={{
+                padding: '6px 12px',
+                border: '1px solid var(--border)',
+                borderRadius: 6,
+                background: currentPage === totalPages ? 'var(--bg-muted)' : 'var(--surface)',
+                color: currentPage === totalPages ? 'var(--text-muted)' : 'var(--text-primary)',
+                cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                fontSize: 13,
+              }}
+            >
+              Next
+            </button>
+          </div>
+        )}
+        
         <p style={{ marginTop: 14, fontSize: 12, color: 'var(--text-muted)' }}>
-          Showing {filtered.length} products
+          Showing {products.length} of {totalCount} products
         </p>
       </main>
     </div>

@@ -36,7 +36,7 @@ export default function BomCreateForm() {
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    api.get('/products/').then((res) => setProducts(res.data))
+    api.get('/products/?limit=10000').then((res) => setProducts(res.data.items || res.data))
   }, [])
 
   useEffect(() => {

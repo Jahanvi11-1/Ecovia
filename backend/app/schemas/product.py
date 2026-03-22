@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel, ConfigDict
 
 
@@ -34,3 +34,11 @@ class ProductOut(BaseModel):
     created_at: Optional[datetime] = None
     active_version: Optional[ProductVersionOut] = None
     versions: list[ProductVersionOut] = []
+
+
+class PaginatedProductsOut(BaseModel):
+    items: List[ProductOut]
+    total: int
+    page: int
+    limit: int
+    pages: int

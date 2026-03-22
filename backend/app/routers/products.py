@@ -1,13 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 
 from app.database import get_db
 from app.core.deps import get_current_user
 from app.models.product import Product, ProductVersion
 from app.models.user import User
-from app.schemas.product import ProductOut, ProductVersionOut, ProductCreate
+from app.schemas.product import ProductOut, ProductVersionOut, ProductCreate, PaginatedProductsOut
 
 router = APIRouter(prefix="/api/products", tags=["products"])
 
@@ -58,13 +58,24 @@ async def create_product(
     )
 
 
-@router.get("/", response_model=list[ProductOut])
+@router.get("/", response_model=PaginatedProductsOut)
 async def list_products(
+    page: int = Query(1, ge=1),
+    limit: int = Query(50, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    # Get total count for pagination
+    count_result = await db.execute(select(func.count(Product.product_id)))
+    total_count = count_result.scalar()
+    
+    # Apply pagination
+    offset = (page - 1) * limit
     result = await db.execute(
-        select(Product).options(selectinload(Product.versions))
+        select(Product)
+        .options(selectinload(Product.versions))
+        .offset(offset)
+        .limit(limit)
     )
     products = result.scalars().all()
 
@@ -83,7 +94,16 @@ async def list_products(
                 versions=[],
             )
         )
-    return output
+    
+    total_pages = (total_count + limit - 1) // limit  # Ceiling division
+    
+    return PaginatedProductsOut(
+        items=output,
+        total=total_count,
+        page=page,
+        limit=limit,
+        pages=total_pages
+    )
 
 
 @router.get("/{product_id}", response_model=ProductOut)

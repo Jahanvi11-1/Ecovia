@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
@@ -8,7 +8,7 @@ from app.core.deps import get_current_user
 from app.models.bom import Bom, BomComponent, BomOperation
 from app.models.product import Product, ProductVersion
 from app.models.user import User
-from app.schemas.bom import BomOut, BomCreate, BomComponentOut, BomComponentCreate, BomOperationOut, BomOperationCreate
+from app.schemas.bom import BomOut, BomCreate, BomComponentOut, BomComponentCreate, BomOperationOut, BomOperationCreate, PaginatedBomsOut
 
 router = APIRouter(prefix="/api/boms", tags=["boms"])
 
@@ -28,16 +28,40 @@ async def _bom_to_out(bom: Bom, db: AsyncSession) -> BomOut:
     return data
 
 
-@router.get("/", response_model=list[BomOut])
+@router.get("/", response_model=PaginatedBomsOut)
 async def list_boms(
+    page: int = Query(1, ge=1),
+    limit: int = Query(50, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    # Get total count for pagination
+    count_result = await db.execute(select(func.count(Bom.bom_id)))
+    total_count = count_result.scalar()
+    
+    # Apply pagination
+    offset = (page - 1) * limit
     result = await db.execute(
-        select(Bom).options(selectinload(Bom.components), selectinload(Bom.operations))
+        select(Bom)
+        .options(selectinload(Bom.components), selectinload(Bom.operations))
+        .offset(offset)
+        .limit(limit)
     )
     boms = result.scalars().all()
-    return [await _bom_to_out(b, db) for b in boms]
+    
+    output = []
+    for bom in boms:
+        output.append(await _bom_to_out(bom, db))
+    
+    total_pages = (total_count + limit - 1) // limit  # Ceiling division
+    
+    return PaginatedBomsOut(
+        items=output,
+        total=total_count,
+        page=page,
+        limit=limit,
+        pages=total_pages
+    )
 
 
 @router.get("/by-product-version/{version_id}", response_model=list[BomOut])

@@ -37,7 +37,7 @@ export default function EcoCreateForm() {
   const isStarted = savedEco?.is_started === true
 
   useEffect(() => {
-    api.get('/products/').then((res) => setProducts(res.data))
+    api.get('/products/?limit=10000').then((res) => setProducts(res.data.items || res.data))
     setForm((f) => ({ ...f, user_id: user?.user_id || '' }))
   }, [user])
 
@@ -281,6 +281,8 @@ export default function EcoCreateForm() {
                 onChange={set('effective_date')}
                 disabled={ro}
                 style={commonInputStyle}
+                min={new Date().toISOString().slice(0,16)}
+                
               />
             </div>
 

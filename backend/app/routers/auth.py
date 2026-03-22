@@ -87,5 +87,4 @@ async def me(current_user: User = Depends(get_current_user)):
 @router.post("/forgot-password")
 async def forgot_password(payload: ForgotPasswordRequest, db: AsyncSession = Depends(get_db)):
     # Stub: in production this would send a reset email
-    # We always return success to avoid leaking whether an email exists
     return {"message": "If that email is registered, a password reset link has been sent."}

@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel, ConfigDict
 
 
@@ -46,6 +46,14 @@ class BomOut(BaseModel):
     product_name: Optional[str] = None  # resolved from product_version → product_name
     components: list[BomComponentOut] = []
     operations: list[BomOperationOut] = []
+
+
+class PaginatedBomsOut(BaseModel):
+    items: List[BomOut]
+    total: int
+    page: int
+    limit: int
+    pages: int
 
 
 class BomCreate(BaseModel):

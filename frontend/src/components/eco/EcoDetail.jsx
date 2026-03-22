@@ -298,7 +298,7 @@ function BomChangesEditor({ bomId }) {
 
   useEffect(() => {
     fetchBom()
-    api.get('/products/').then((res) => setProducts(res.data))
+    api.get('/products/?limit=10000').then((res) => setProducts(res.data.items || res.data))
   }, [bomId])
 
   // --- NEW UPDATE QUANTITY FUNCTION ---
