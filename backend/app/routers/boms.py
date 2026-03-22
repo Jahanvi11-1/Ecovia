@@ -112,12 +112,21 @@ async def create_bom(
 
     bom_version = payload.bom_version or f"{pv.product_name} {total_count + 1}"
 
+    # Auto-archive any existing Active BoM for this product version to prevent duplicates
+    active_boms_result = await db.execute(
+        select(Bom).where(Bom.product_version_id == payload.product_version_id, Bom.status == 'Active')
+    )
+    active_boms = active_boms_result.scalars().all()
+    for old_bom in active_boms:
+        old_bom.status = 'Archived'
+
     new_bom = Bom(
         product_version_id=payload.product_version_id,
         bom_version=bom_version,
         reference=payload.reference,
         quantity=payload.quantity,
         unit_of_measure=payload.unit_of_measure,
+        status='Active',
     )
     db.add(new_bom)
     await db.commit()

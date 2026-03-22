@@ -1,6 +1,11 @@
 import React, { useEffect, useState } from 'react'
 import api from '../../api/client'
 
+// Zero-install SVG Icons
+const FilterIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+)
+
 export default function AuditLogReport() {
   const [logs, setLogs] = useState([])
   const [loading, setLoading] = useState(true)
@@ -28,72 +33,210 @@ export default function AuditLogReport() {
     fetchLogs()
   }
 
+  // Common styles from §5.4
+  const inputStyle = {
+    height: 36,
+    padding: '0 12px',
+    border: '1px solid var(--border)',
+    borderRadius: 8,
+    background: 'var(--bg-subtle)',
+    fontSize: 13,
+    fontFamily: 'inherit',
+    color: 'var(--text-primary)',
+    outline: 'none',
+  }
+
+  const labelStyle = {
+    fontSize: 12,
+    fontWeight: 500,
+    color: 'var(--text-secondary)',
+    display: 'block',
+    marginBottom: 5
+  }
+
   return (
-    <div>
-      <h1 className="text-xl font-bold text-gray-800 mb-4">Audit Logs</h1>
+    <div style={{ background: 'var(--bg-page)', minHeight: '100vh', fontFamily: "'Inter', sans-serif" }}>
+      <main style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 32px' }}>
+        
+        {/* Page Header §5.2 */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24 }}>
+          <div>
+            <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.4px', margin: 0 }}>
+              Audit Logs
+            </h1>
+            <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4, fontWeight: 400 }}>
+              Track all system actions and Engineering Change history
+            </p>
+          </div>
+        </div>
 
-      {/* Filters */}
-      <form onSubmit={handleFilter} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-4 flex gap-3 flex-wrap items-end">
-        <div>
-          <label className="block text-xs text-gray-500 mb-1">ECO ID</label>
-          <input type="number" value={filters.eco_id} onChange={(e) => setFilters({ ...filters, eco_id: e.target.value })}
-            className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm w-24 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-        </div>
-        <div>
-          <label className="block text-xs text-gray-500 mb-1">User ID</label>
-          <input type="number" value={filters.user_id} onChange={(e) => setFilters({ ...filters, user_id: e.target.value })}
-            className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm w-24 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-        </div>
-        <div>
-          <label className="block text-xs text-gray-500 mb-1">From</label>
-          <input type="date" value={filters.from_date} onChange={(e) => setFilters({ ...filters, from_date: e.target.value })}
-            className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-        </div>
-        <div>
-          <label className="block text-xs text-gray-500 mb-1">To</label>
-          <input type="date" value={filters.to_date} onChange={(e) => setFilters({ ...filters, to_date: e.target.value })}
-            className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-        </div>
-        <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-1.5 rounded-lg">
-          Filter
-        </button>
-      </form>
+        {/* Filters Card §5.5 */}
+        <form 
+          onSubmit={handleFilter} 
+          style={{ 
+            background: 'var(--surface)', 
+            border: '1px solid var(--border)', 
+            borderRadius: 12, 
+            padding: '20px 24px', 
+            marginBottom: 14,
+            display: 'flex',
+            gap: 16,
+            alignItems: 'flex-end',
+            flexWrap: 'wrap'
+          }}
+        >
+          <div style={{ width: 100 }}>
+            <label style={labelStyle}>ECO ID</label>
+            <input 
+              type="number" 
+              value={filters.eco_id} 
+              onChange={(e) => setFilters({ ...filters, eco_id: e.target.value })}
+              style={{ ...inputStyle, width: '100%' }}
+              placeholder="000"
+            />
+          </div>
+          <div style={{ width: 100 }}>
+            <label style={labelStyle}>User ID</label>
+            <input 
+              type="number" 
+              value={filters.user_id} 
+              onChange={(e) => setFilters({ ...filters, user_id: e.target.value })}
+              style={{ ...inputStyle, width: '100%' }}
+              placeholder="000"
+            />
+          </div>
+          <div>
+            <label style={labelStyle}>From Date</label>
+            <input 
+              type="date" 
+              value={filters.from_date} 
+              onChange={(e) => setFilters({ ...filters, from_date: e.target.value })}
+              style={inputStyle}
+            />
+          </div>
+          <div>
+            <label style={labelStyle}>To Date</label>
+            <input 
+              type="date" 
+              value={filters.to_date} 
+              onChange={(e) => setFilters({ ...filters, to_date: e.target.value })}
+              style={inputStyle}
+            />
+          </div>
+          <button 
+            type="submit" 
+            style={{
+              background: 'var(--punch-red)',
+              color: '#ffffff',
+              fontSize: 12.5,
+              fontWeight: 600,
+              height: 36,
+              padding: '0 16px',
+              borderRadius: 8,
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--punch-red-hover)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'var(--punch-red)'}
+          >
+            <FilterIcon /> Apply Filters
+          </button>
+        </form>
 
-      {error && <div className="text-red-500 text-sm mb-4">{error}</div>}
+        {error && (
+          <div style={{ 
+            fontSize: 13, 
+            color: 'var(--punch-red)', 
+            background: 'var(--punch-red-light)', 
+            border: '1px solid var(--punch-red-border)', 
+            padding: '10px 14px', 
+            borderRadius: 8, 
+            marginBottom: 14 
+          }}>
+            {error}
+          </div>
+        )}
 
-      {loading ? (
-        <div className="text-gray-400 text-sm py-8 text-center">Loading...</div>
-      ) : (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="text-left px-4 py-3 font-semibold text-gray-600">Log ID</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-600">ECO</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-600">Action</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-600">By User</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-600">Timestamp</th>
+        {/* Table Container §5.6 */}
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ background: 'var(--bg-subtle)', borderBottom: '1px solid var(--border)' }}>
+                <th style={tableHeaderStyle}>Log ID</th>
+                <th style={tableHeaderStyle}>Reference</th>
+                <th style={tableHeaderStyle}>Action Performed</th>
+                <th style={tableHeaderStyle}>By User</th>
+                <th style={{ ...tableHeaderStyle, textAlign: 'right' }}>Timestamp</th>
               </tr>
             </thead>
             <tbody>
-              {logs.length === 0 && (
-                <tr><td colSpan={5} className="text-center py-8 text-gray-400">No logs found</td></tr>
-              )}
-              {logs.map((log) => (
-                <tr key={log.log_id} className="border-b border-gray-100">
-                  <td className="px-4 py-3 font-mono text-gray-500">{log.log_id}</td>
-                  <td className="px-4 py-3 font-mono text-blue-600">ECO-{log.eco_id}</td>
-                  <td className="px-4 py-3 font-medium">{log.action_taken}</td>
-                  <td className="px-4 py-3 text-gray-500">{log.action_by}</td>
-                  <td className="px-4 py-3 text-gray-500">
-                    {log.timestamp ? new Date(log.timestamp).toLocaleString() : '—'}
+              {loading ? (
+                <tr>
+                  <td colSpan={5} style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
+                    Fetching logs...
                   </td>
                 </tr>
-              ))}
+              ) : logs.length === 0 ? (
+                <tr>
+                  <td colSpan={5} style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
+                    No activity found for the selected criteria.
+                  </td>
+                </tr>
+              ) : (
+                logs.map((log, idx) => (
+                  <tr 
+                    key={log.log_id}
+                    style={{ 
+                      borderBottom: idx === logs.length - 1 ? 'none' : '1px solid #f1f5f9',
+                      transition: 'background 0.15s ease'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = '#fafcff'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <td style={{ ...tableCellStyle, color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+                      #{log.log_id}
+                    </td>
+                    <td style={{ ...tableCellStyle, fontWeight: 600, color: 'var(--cerulean)' }}>
+                      ECO-{log.eco_id}
+                    </td>
+                    <td style={tableCellStyle}>
+                      {log.action_taken}
+                    </td>
+                    <td style={tableCellStyle}>
+                      {log.action_by}
+                    </td>
+                    <td style={{ ...tableCellStyle, textAlign: 'right', color: 'var(--text-secondary)' }}>
+                      {log.timestamp ? new Date(log.timestamp).toLocaleString() : '—'}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
-      )}
+      </main>
     </div>
   )
+}
+
+// Internal styles for table consistency §5.6
+const tableHeaderStyle = {
+  padding: '11px 16px',
+  textAlign: 'left',
+  fontSize: 11,
+  fontWeight: 600,
+  color: 'var(--text-secondary)',
+  textTransform: 'uppercase',
+  letterSpacing: '0.05em',
+  whiteSpace: 'nowrap',
+}
+
+const tableCellStyle = {
+  padding: '11px 16px',
+  fontSize: 13,
+  color: 'var(--text-primary)',
+  verticalAlign: 'middle',
 }

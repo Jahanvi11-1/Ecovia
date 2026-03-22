@@ -2,16 +2,27 @@ import { useEffect, useState } from 'react'
 import api from '../../api/client'
 import useAuthStore from '../../store/authStore'
 
+// Zero-install SVG Icons
+const PlusIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+)
+const XIcon = () => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+)
+const ArrowLeftIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+)
+
 export default function EcoStageSettings() {
   const user = useAuthStore((s) => s.user)
   const [stages, setStages] = useState([])
-  const [selected, setSelected] = useState(null) // stage being edited
+  const [selected, setSelected] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   if (user?.role !== 'Admin') {
     return (
-      <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-6 text-sm">
+      <div style={{ background: 'var(--punch-red-light)', border: '1px solid var(--punch-red-border)', color: 'var(--punch-red)', borderRadius: 12, padding: '20px 24px', fontSize: 13, fontWeight: 500 }}>
         Access Denied — Settings are only accessible to Admins.
       </div>
     )
@@ -37,64 +48,70 @@ export default function EcoStageSettings() {
     }
   }
 
-  if (loading) return <div className="text-gray-400 text-sm py-8 text-center">Loading...</div>
+  if (loading) return <div style={{ color: 'var(--text-muted)', padding: '40px 0', textAlign: 'center', fontSize: 13 }}>Loading system stages...</div>
 
   return (
-    <div className="flex gap-4 max-w-4xl">
-      {/* Left: Stage list */}
-      <div className="w-64 flex-shrink-0">
-        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-          <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-200 bg-gray-50">
+    <div style={{ background: 'var(--bg-page)', minHeight: '100vh', padding: '28px 32px', display: 'flex', gap: 24, maxWidth: 1200, margin: '0 auto', fontFamily: "'Inter', sans-serif" }}>
+      
+      {/* Left: Stage list Card §5.5 */}
+      <div style={{ width: 280, flexShrink: 0 }}>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-subtle)' }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>ECO Stages</span>
             <button
               onClick={handleNew}
-              className="bg-green-500 hover:bg-green-600 text-white text-xs font-semibold px-3 py-1 rounded transition"
+              style={{ background: 'var(--punch-red)', color: '#ffffff', fontSize: 11, fontWeight: 600, height: 28, padding: '0 10px', borderRadius: 6, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
             >
-              New
+              <PlusIcon /> New
             </button>
-            <span className="flex-1 text-center text-sm font-semibold text-gray-700">ECO's Stages</span>
           </div>
 
-          {/* Header row */}
-          <div className="px-4 py-2 border-b border-gray-100 bg-white">
-            <span className="text-xs font-semibold text-gray-600">Name</span>
-          </div>
-
-          {stages.length === 0 && (
-            <div className="text-center py-8 text-gray-400 text-sm">No stages yet</div>
-          )}
-          {stages.map((s) => (
-            <div
-              key={s.stage_id}
-              onClick={() => setSelected(s)}
-              className={`flex items-center justify-between px-4 py-2.5 border-b border-gray-100 cursor-pointer text-sm hover:bg-blue-50 ${
-                selected?.stage_id === s.stage_id ? 'bg-blue-50 text-blue-700' : 'text-gray-800'
-              }`}
-            >
-              <span>{s.stage_name}</span>
-              <button
-                onClick={(e) => handleDelete(s.stage_id, e)}
-                className="text-red-400 hover:text-red-600 text-xs ml-2 opacity-0 group-hover:opacity-100"
-                title="Delete"
+          <div style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+            {stages.length === 0 && (
+              <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 12 }}>No stages configured</div>
+            )}
+            {stages.map((s) => (
+              <div
+                key={s.stage_id}
+                onClick={() => setSelected(s)}
+                className="group"
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', borderBottom: '1px solid var(--bg-muted)', cursor: 'pointer', transition: 'all 0.15s ease',
+                  background: selected?.stage_id === s.stage_id ? 'var(--cerulean-light)' : 'transparent',
+                  color: selected?.stage_id === s.stage_id ? 'var(--cerulean)' : 'var(--text-primary)'
+                }}
               >
-                ×
-              </button>
-            </div>
-          ))}
+                <span style={{ fontSize: 13, fontWeight: selected?.stage_id === s.stage_id ? 600 : 400 }}>{s.stage_name}</span>
+                <button
+                  onClick={(e) => handleDelete(s.stage_id, e)}
+                  style={{ background: 'transparent', border: 'none', color: 'var(--punch-red)', cursor: 'pointer', display: 'flex', padding: 4, borderRadius: 4 }}
+                >
+                  <XIcon />
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
       {/* Right: Stage detail / edit */}
-      {selected && (
-        <StageDetail
-          key={selected.stage_id ?? 'new'}
-          stage={selected}
-          onSaved={() => { fetchStages(); setSelected(null) }}
-          onClose={() => setSelected(null)}
-        />
-      )}
+      <div style={{ flex: 1 }}>
+        {selected ? (
+          <StageDetail
+            key={selected.stage_id ?? 'new'}
+            stage={selected}
+            onSaved={() => { fetchStages(); setSelected(null) }}
+            onClose={() => setSelected(null)}
+          />
+        ) : (
+          <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed var(--border)', borderRadius: 12, color: 'var(--text-muted)', fontSize: 13 }}>
+            Select a stage from the left to manage attributes and approvals
+          </div>
+        )}
+      </div>
 
       {error && (
-        <div className="fixed bottom-4 right-4 bg-red-100 border border-red-300 text-red-700 text-sm px-4 py-2 rounded shadow">
+        <div style={{ position: 'fixed', bottom: 24, right: 24, background: 'var(--punch-red-light)', border: '1px solid var(--punch-red-border)', color: 'var(--punch-red)', padding: '12px 20px', borderRadius: 8, boxShadow: '0 4px 12px rgba(230,57,70,0.15)', fontSize: 13, fontWeight: 500, zIndex: 100 }}>
           {error}
         </div>
       )}
@@ -110,8 +127,6 @@ function StageDetail({ stage, onSaved, onClose }) {
   const [users, setUsers] = useState([])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-
-  // For adding a new approval rule
   const [newUserId, setNewUserId] = useState('')
   const [newCategory, setNewCategory] = useState('Required')
 
@@ -172,138 +187,87 @@ function StageDetail({ stage, onSaved, onClose }) {
     }
   }
 
+  const inputStyle = { height: 36, padding: '0 12px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg-subtle)', fontSize: 13, fontFamily: 'inherit', color: 'var(--text-primary)', width: '100%', outline: 'none' }
+  const labelStyle = { fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: 5 }
+
   return (
-    <div className="flex-1 bg-white border border-gray-200 rounded-lg overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-200 bg-gray-50">
-        <button
-          onClick={onClose}
-          className="text-gray-500 hover:text-gray-700 text-xs px-2 py-1 rounded border border-gray-300 bg-white hover:bg-gray-50 transition"
-        >
-          ← Back
-        </button>
-        <span className="flex-1 text-center text-sm font-semibold text-gray-700">
-          {isNew ? 'New Stage' : stage.stage_name}
-        </span>
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1 rounded transition disabled:opacity-50"
-        >
-          {saving ? 'Saving...' : 'Save'}
+    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--surface)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <button onClick={onClose} style={{ background: 'var(--surface)', color: 'var(--text-primary)', fontSize: 12, fontWeight: 500, height: 32, padding: '0 12px', borderRadius: 8, border: '1px solid var(--border)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <ArrowLeftIcon /> Back
+          </button>
+          <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{isNew ? 'New Lifecycle Stage' : stage.stage_name}</span>
+        </div>
+        <button onClick={handleSave} disabled={saving} style={{ background: 'var(--punch-red)', color: '#ffffff', fontSize: 12.5, fontWeight: 600, height: 32, padding: '0 16px', borderRadius: 8, border: 'none', cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
+          {saving ? 'Processing...' : 'Save Configuration'}
         </button>
       </div>
 
-      <div className="p-5 space-y-5">
-        {error && (
-          <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">{error}</div>
-        )}
+      <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: 24 }}>
+        {error && <div style={{ fontSize: 13, color: 'var(--punch-red)', background: 'var(--punch-red-light)', border: '1px solid var(--punch-red-border)', padding: '10px 14px', borderRadius: 8 }}>{error}</div>}
 
-        {/* Name field */}
-        <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">Name</label>
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="e.g. New, In Review, Done"
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 16 }}>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Sequence Order</label>
-            <input
-              type="number"
-              min="1"
-              value={seqOrder}
-              onChange={(e) => setSeqOrder(e.target.value)}
-              className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            <label style={labelStyle}>Stage Name</label>
+            <input value={name} onChange={(e) => setName(e.target.value)} style={inputStyle} placeholder="e.g. Design Review" />
           </div>
-          <div className="flex items-end pb-2">
-            <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={isFinal}
-                onChange={(e) => setIsFinal(e.target.checked)}
-                className="w-4 h-4 text-blue-600 rounded"
-              />
+          <div>
+            <label style={labelStyle}>Sequence</label>
+            <input type="number" value={seqOrder} onChange={(e) => setSeqOrder(e.target.value)} style={inputStyle} />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', height: 36, marginTop: 21 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer', color: 'var(--text-primary)' }}>
+              <input type="checkbox" checked={isFinal} onChange={(e) => setIsFinal(e.target.checked)} style={{ width: 16, height: 16 }} />
               Final Stage
             </label>
           </div>
         </div>
 
-        {/* Approvals sub-section — only for existing stages */}
         {!isNew && (
-          <div>
-            <div className="text-xs font-semibold text-gray-600 mb-2">Approvals</div>
-            <div className="border border-gray-200 rounded overflow-hidden">
-              {/* Column headers */}
-              <div className="grid grid-cols-[1fr_140px_32px] bg-gray-50 border-b border-gray-200 px-3 py-2">
-                <span className="text-xs font-semibold text-gray-600">User</span>
-                <span className="text-xs font-semibold text-gray-600">Approval Category</span>
-                <span />
-              </div>
-
-              {rules.length === 0 && (
-                <div className="text-center py-4 text-gray-400 text-xs">No approvals configured</div>
-              )}
-              {rules.map((r) => (
-                <div key={r.rule_id} className="grid grid-cols-[1fr_140px_32px] items-center px-3 py-2 border-b border-gray-100 text-sm">
-                  <span className="text-gray-800">{r.user_login_id}</span>
-                  <span>
-                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                      r.approval_category === 'Required'
-                        ? 'bg-orange-100 text-orange-700'
-                        : 'bg-gray-100 text-gray-600'
-                    }`}>
-                      {r.approval_category}
-                    </span>
-                  </span>
-                  <button
-                    onClick={() => handleDeleteRule(r.rule_id)}
-                    className="text-red-400 hover:text-red-600 text-sm font-bold"
-                    title="Remove"
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
-
-              {/* Add row */}
-              <div className="grid grid-cols-[1fr_140px_64px] items-center gap-2 px-3 py-2 bg-gray-50 border-t border-gray-200">
-                <select
-                  value={newUserId}
-                  onChange={(e) => setNewUserId(e.target.value)}
-                  className="border border-gray-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-400 w-full"
-                >
-                  <option value="">Select user...</option>
-                  {users.map((u) => (
-                    <option key={u.user_id} value={u.user_id}>{u.login_id}</option>
+          <div style={{ borderTop: '1px solid var(--border)', paddingTop: 24 }}>
+            <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', color: 'var(--text-secondary)', letterSpacing: '0.05em', marginBottom: 12 }}>Sign-off Requirements</div>
+            
+            <div style={{ border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead style={{ background: 'var(--bg-subtle)', borderBottom: '1px solid var(--border)' }}>
+                  <tr>
+                    <th style={{ padding: '9px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>User</th>
+                    <th style={{ padding: '9px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Category</th>
+                    <th style={{ padding: '9px 16px', textAlign: 'right' }}></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rules.length === 0 && (
+                    <tr><td colSpan={3} style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 12 }}>No approvers defined for this stage.</td></tr>
+                  )}
+                  {rules.map((r) => (
+                    <tr key={r.rule_id} style={{ borderBottom: '1px solid var(--bg-muted)' }}>
+                      <td style={{ padding: '11px 16px', fontSize: 13, fontWeight: 500 }}>{r.user_login_id}</td>
+                      <td style={{ padding: '11px 16px' }}>
+                        <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20, background: r.approval_category === 'Required' ? 'var(--status-review-bg)' : 'var(--bg-muted)', color: r.approval_category === 'Required' ? 'var(--status-review-text)' : 'var(--text-secondary)' }}>
+                          {r.approval_category}
+                        </span>
+                      </td>
+                      <td style={{ padding: '11px 16px', textAlign: 'right' }}>
+                        <button onClick={() => handleDeleteRule(r.rule_id)} style={{ background: 'transparent', border: 'none', color: 'var(--punch-red)', cursor: 'pointer' }}><XIcon /></button>
+                      </td>
+                    </tr>
                   ))}
+                </tbody>
+              </table>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px 80px', gap: 12, padding: '12px 16px', background: 'var(--bg-subtle)', borderTop: '1px solid var(--border)' }}>
+                <select value={newUserId} onChange={(e) => setNewUserId(e.target.value)} style={{ ...inputStyle, height: 32 }}>
+                  <option value="">Select User...</option>
+                  {users.map((u) => <option key={u.user_id} value={u.user_id}>{u.login_id}</option>)}
                 </select>
-                <select
-                  value={newCategory}
-                  onChange={(e) => setNewCategory(e.target.value)}
-                  className="border border-gray-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-400 w-full"
-                >
+                <select value={newCategory} onChange={(e) => setNewCategory(e.target.value)} style={{ ...inputStyle, height: 32 }}>
                   <option value="Required">Required</option>
                   <option value="Optional">Optional</option>
                 </select>
-                <button
-                  onClick={handleAddRule}
-                  disabled={!newUserId}
-                  className="bg-green-500 hover:bg-green-600 text-white text-xs font-semibold px-2 py-1 rounded transition disabled:opacity-40"
-                >
-                  Add
-                </button>
+                <button onClick={handleAddRule} disabled={!newUserId} style={{ background: 'var(--cerulean)', color: '#ffffff', fontSize: 12, fontWeight: 600, height: 32, borderRadius: 8, border: 'none', cursor: 'pointer', opacity: !newUserId ? 0.5 : 1 }}>Add</button>
               </div>
             </div>
-
-            <p className="text-xs text-gray-400 mt-2">
-              Required: approval needed to advance ECO. Optional: approval is informational only.
-            </p>
           </div>
         )}
       </div>

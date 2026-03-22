@@ -3,6 +3,19 @@ import { useNavigate, Link } from 'react-router-dom'
 import api from '../../api/client'
 import useAuthStore from '../../store/authStore'
 
+// Zero-install SVG Icons
+const LogInIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M13.8 12H3"/>
+  </svg>
+)
+
+const LoaderIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="animate-spin">
+    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+  </svg>
+)
+
 export default function LoginPage() {
   const navigate = useNavigate()
   const login = useAuthStore((s) => s.login)
@@ -28,55 +41,161 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-      <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md">
-        <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center">Ecovia PLM</h1>
-        <h2 className="text-lg font-semibold text-gray-600 mb-4 text-center">Sign In</h2>
+    <div style={{ 
+      background: 'var(--bg-page)', 
+      minHeight: '100vh', 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'center', 
+      fontFamily: "'Inter', sans-serif" 
+    }}>
+      <div style={{ 
+        background: 'var(--surface)', 
+        border: '1px solid var(--border)', 
+        borderRadius: 12, 
+        padding: '28px 32px', 
+        width: '100%', 
+        maxWidth: 400, 
+        boxShadow: '0 4px 12px rgba(29,53,87,0.04)' 
+      }}>
+        
+        {/* Page Header Block */}
+        <div style={{ textAlign: 'center', marginBottom: 24 }}>
+          <h1 style={{ 
+            fontSize: 20, 
+            fontWeight: 700, 
+            color: 'var(--text-primary)', 
+            letterSpacing: '-0.4px', 
+            margin: 0 
+          }}>
+            Ecovia PLM
+          </h1>
+          <p style={{ 
+            fontSize: 13, 
+            color: 'var(--text-secondary)', 
+            marginTop: 4, 
+            fontWeight: 400 
+          }}>
+            Sign In
+          </p>
+        </div>
 
+        {/* Error Notification */}
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 mb-4 text-sm">
+          <div style={{ 
+            background: 'var(--punch-red-light)', 
+            border: '1px solid var(--punch-red-border)', 
+            color: 'var(--punch-red)', 
+            borderRadius: 8, 
+            padding: '10px 14px', 
+            marginBottom: 16, 
+            fontSize: 12, 
+            fontWeight: 500 
+          }}>
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {/* Login ID Field */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Login ID</label>
+            <label style={{ 
+              fontSize: 12, 
+              fontWeight: 500, 
+              color: 'var(--text-secondary)', 
+              display: 'block', 
+              marginBottom: 5 
+            }}>
+              Login ID <span style={{ color: 'var(--punch-red)' }}>*</span>
+            </label>
             <input
               name="login_id"
               value={form.login_id}
               onChange={handleChange}
               required
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              style={{ 
+                height: 36, 
+                padding: '0 12px', 
+                border: '1px solid var(--border)', 
+                borderRadius: 8, 
+                background: 'var(--bg-subtle)', 
+                fontSize: 13, 
+                color: 'var(--text-primary)', 
+                width: '100%', 
+                outline: 'none' 
+              }}
             />
           </div>
+
+          {/* Password Field */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <label style={{ 
+              fontSize: 12, 
+              fontWeight: 500, 
+              color: 'var(--text-secondary)', 
+              display: 'block', 
+              marginBottom: 5 
+            }}>
+              Password <span style={{ color: 'var(--punch-red)' }}>*</span>
+            </label>
             <input
               type="password"
               name="password"
               value={form.password}
               onChange={handleChange}
               required
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              style={{ 
+                height: 36, 
+                padding: '0 12px', 
+                border: '1px solid var(--border)', 
+                borderRadius: 8, 
+                background: 'var(--bg-subtle)', 
+                fontSize: 13, 
+                color: 'var(--text-primary)', 
+                width: '100%', 
+                outline: 'none' 
+              }}
             />
           </div>
+
+          {/* Primary Action Button */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg transition disabled:opacity-50"
+            style={{
+              background: loading ? 'var(--text-muted)' : 'var(--punch-red)',
+              color: '#ffffff',
+              fontSize: 12.5,
+              fontWeight: 600,
+              height: 36,
+              padding: '0 16px',
+              borderRadius: 8,
+              border: 'none',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6,
+              marginTop: 10
+            }}
           >
+            {loading ? <LoaderIcon /> : <LogInIcon />}
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
 
-        <div className="mt-4 text-center text-sm text-gray-500 space-y-1">
-          <p>
-            <Link to="/forgot-password" className="text-blue-600 hover:underline">Forgot password?</Link>
+        {/* Navigation Links */}
+        <div style={{ marginTop: 20, textAlign: 'center', fontSize: 13 }}>
+          <p style={{ margin: '4px 0' }}>
+            <Link to="/forgot-password" style={{ color: 'var(--cerulean)', fontWeight: 500, textDecoration: 'none' }}>
+              Forgot password?
+            </Link>
           </p>
-          <p>
+          <p style={{ margin: '4px 0', color: 'var(--text-secondary)' }}>
             Don't have an account?{' '}
-            <Link to="/signup" className="text-blue-600 hover:underline">Sign up</Link>
+            <Link to="/signup" style={{ color: 'var(--cerulean)', fontWeight: 600, textDecoration: 'none' }}>
+              Sign up
+            </Link>
           </p>
         </div>
       </div>

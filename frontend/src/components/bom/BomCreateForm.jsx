@@ -2,6 +2,20 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../../api/client'
 
+// Zero-install SVG Icons
+const ArrowLeftIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
+)
+const SaveIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+)
+const PlusIcon = () => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+)
+const TrashIcon = () => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+)
+
 export default function BomCreateForm() {
   const navigate = useNavigate()
   const [products, setProducts] = useState([])
@@ -14,8 +28,8 @@ export default function BomCreateForm() {
   const [selectedProductId, setSelectedProductId] = useState('')
   const [versions, setVersions] = useState([])
   const [tab, setTab] = useState('components')
-  const [components, setComponents] = useState([]) // { product_id, quantity, unit_of_measure }
-  const [operations, setOperations] = useState([]) // { work_center, operation_time_mins, sequence_order }
+  const [components, setComponents] = useState([])
+  const [operations, setOperations] = useState([])
   const [newComp, setNewComp] = useState({ product_id: '', quantity: '', unit_of_measure: 'Units' })
   const [newOp, setNewOp] = useState({ work_center: '', operation_time_mins: '', sequence_order: '' })
   const [error, setError] = useState('')
@@ -65,14 +79,8 @@ export default function BomCreateForm() {
         unit_of_measure: form.unit_of_measure,
       })
       const bomId = res.data.bom_id
-      // Add components
-      for (const c of components) {
-        await api.post(`/boms/${bomId}/components`, c)
-      }
-      // Add operations
-      for (const op of operations) {
-        await api.post(`/boms/${bomId}/operations`, op)
-      }
+      for (const c of components) { await api.post(`/boms/${bomId}/components`, c) }
+      for (const op of operations) { await api.post(`/boms/${bomId}/operations`, op) }
       navigate(`/boms/${bomId}`)
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to save BoM')
@@ -81,243 +89,207 @@ export default function BomCreateForm() {
     }
   }
 
-  const selectedProduct = products.find((p) => String(p.product_id) === String(selectedProductId))
-
   return (
-    <div className="max-w-2xl">
-      <h2 className="text-base font-semibold text-gray-700 mb-2">Bill of Materials</h2>
-
-      {/* Action buttons */}
-      <div className="flex gap-2 mb-3">
-        <button
-          onClick={() => navigate('/boms')}
-          className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-xs font-medium px-3 py-1.5 rounded transition"
-        >
-          Back
-        </button>
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-xs font-medium px-3 py-1.5 rounded transition disabled:opacity-50"
-        >
-          {saving ? 'Saving...' : 'Save'}
-        </button>
-      </div>
-
-      {error && (
-        <div className="mb-3 text-xs text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">{error}</div>
-      )}
-
-      <div className="bg-white border border-gray-200 rounded-lg p-4">
-        {/* Auto reference */}
-        <div className="inline-block border border-gray-300 rounded px-2 py-0.5 text-xs font-mono text-gray-600 mb-4">
-          {form.reference || autoRef}
+    <div style={{ background: 'var(--bg-page)', minHeight: '100vh', fontFamily: "'Inter', sans-serif" }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 32px' }}>
+        
+        {/* Page Header Block */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24 }}>
+          <div>
+            <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.4px', margin: 0 }}>
+              New Bill of Materials
+            </h1>
+            <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>
+              Define components and work operations for production
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              onClick={() => navigate('/boms')}
+              style={{ background: 'var(--surface)', color: 'var(--text-primary)', fontSize: 12.5, fontWeight: 500, height: 36, padding: '0 16px', borderRadius: 8, border: '1px solid var(--border)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+            >
+              <ArrowLeftIcon /> Back
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              style={{ background: 'var(--punch-red)', color: '#ffffff', fontSize: 12.5, fontWeight: 600, height: 36, padding: '0 16px', borderRadius: 8, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, opacity: saving ? 0.6 : 1 }}
+            >
+              <SaveIcon /> {saving ? 'Saving...' : 'Create BOM'}
+            </button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-x-6 gap-y-3 mb-4">
-          {/* Finished Product */}
-          <div className="col-span-2">
-            <label className="block text-xs text-gray-500 mb-1">Finished product</label>
-            <select
-              value={selectedProductId}
-              onChange={(e) => setSelectedProductId(e.target.value)}
-              className="w-full border-b border-gray-300 text-sm py-1 focus:outline-none focus:border-blue-400 bg-transparent"
-            >
-              <option value="">Select product...</option>
-              {products.map((p) => (
-                <option key={p.product_id} value={p.product_id}>
-                  {p.active_version?.product_name || p.product_code}
-                </option>
-              ))}
-            </select>
+        {error && (
+          <div style={{ background: 'var(--punch-red-light)', border: '1px solid var(--punch-red-border)', color: 'var(--punch-red)', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 12, fontWeight: 500 }}>
+            {error}
+          </div>
+        )}
+
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '20px 24px', marginBottom: 14 }}>
+          {/* Reference Badge */}
+          <div style={{ display: 'inline-block', background: 'var(--bg-muted)', border: '1px solid var(--border)', borderRadius: 6, padding: '4px 8px', fontSize: 11, fontWeight: 600, fontFamily: 'monospace', color: 'var(--text-secondary)', marginBottom: 20 }}>
+            {form.reference || autoRef}
           </div>
 
-          {/* Quantity + Units */}
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">Quantity</label>
-            <div className="flex gap-2 items-center">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+            {/* Finished Product */}
+            <div style={{ gridColumn: '1/-1' }}>
+              <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: 5 }}>Finished Product</label>
+              <select
+                value={selectedProductId}
+                onChange={(e) => setSelectedProductId(e.target.value)}
+                style={{ height: 36, padding: '0 12px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg-subtle)', fontSize: 13, color: 'var(--text-primary)', width: '100%', outline: 'none' }}
+              >
+                <option value="">Select a product to manufacture...</option>
+                {products.map((p) => (
+                  <option key={p.product_id} value={p.product_id}>
+                    {p.active_version?.product_name || p.product_code}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Quantity */}
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: 5 }}>Quantity to Produce</label>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  value={form.quantity}
+                  onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))}
+                  style={{ height: 36, padding: '0 12px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg-subtle)', fontSize: 13, color: 'var(--text-primary)', width: '100%', outline: 'none' }}
+                />
+                <input
+                  value={form.unit_of_measure}
+                  onChange={(e) => setForm((f) => ({ ...f, unit_of_measure: e.target.value }))}
+                  placeholder="Units"
+                  style={{ height: 36, padding: '0 12px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg-subtle)', fontSize: 13, color: 'var(--text-primary)', width: 100, outline: 'none' }}
+                />
+              </div>
+            </div>
+
+            {/* Reference */}
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: 5 }}>Internal Reference</label>
               <input
-                type="number"
-                min="0.01"
-                step="0.01"
-                value={form.quantity}
-                onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))}
-                className="w-20 border-b border-gray-300 text-sm py-1 focus:outline-none focus:border-blue-400 bg-transparent"
-              />
-              <input
-                value={form.unit_of_measure}
-                onChange={(e) => setForm((f) => ({ ...f, unit_of_measure: e.target.value }))}
-                className="w-20 border-b border-gray-300 text-sm py-1 focus:outline-none focus:border-blue-400 bg-transparent"
-                placeholder="Units"
+                maxLength={8}
+                value={form.reference}
+                onChange={(e) => setForm((f) => ({ ...f, reference: e.target.value }))}
+                placeholder="e.g. BOM-PROD"
+                style={{ height: 36, padding: '0 12px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg-subtle)', fontSize: 13, color: 'var(--text-primary)', width: '100%', outline: 'none' }}
               />
             </div>
           </div>
-
-          {/* Reference */}
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">Reference <span className="text-gray-400">(max 8 chars)</span></label>
-            <input
-              maxLength={8}
-              value={form.reference}
-              onChange={(e) => setForm((f) => ({ ...f, reference: e.target.value }))}
-              className="w-full border-b border-gray-300 text-sm py-1 focus:outline-none focus:border-blue-400 bg-transparent"
-              placeholder="e.g. REF-001"
-            />
-          </div>
-
-          {/* Version (readonly, auto) */}
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">Version</label>
-            <span className="text-xs text-gray-400 italic">Auto-generated on save</span>
-          </div>
         </div>
 
-        {/* Tabs */}
-        <div className="border-t border-gray-200 mt-2">
-          <div className="flex">
+        {/* Tabs & Details Card */}
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
+          <div style={{ display: 'flex', background: 'var(--bg-subtle)', borderBottom: '1px solid var(--border)' }}>
             <button
               onClick={() => setTab('components')}
-              className={`px-4 py-2 text-xs font-semibold border-b-2 transition ${tab === 'components' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+              style={{ padding: '12px 24px', fontSize: 13, fontWeight: 600, border: 'none', borderBottom: tab === 'components' ? '2px solid var(--punch-red)' : '2px solid transparent', background: 'transparent', color: tab === 'components' ? 'var(--text-primary)' : 'var(--text-secondary)', cursor: 'pointer' }}
             >
               Components
             </button>
             <button
               onClick={() => setTab('operations')}
-              className={`px-4 py-2 text-xs font-semibold border-b-2 transition ${tab === 'operations' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+              style={{ padding: '12px 24px', fontSize: 13, fontWeight: 600, border: 'none', borderBottom: tab === 'operations' ? '2px solid var(--punch-red)' : '2px solid transparent', background: 'transparent', color: tab === 'operations' ? 'var(--text-primary)' : 'var(--text-secondary)', cursor: 'pointer' }}
             >
-              Work Orders
+              Operations
             </button>
           </div>
 
-          {/* Components tab */}
-          {tab === 'components' && (
-            <div className="pt-3">
-              <table className="w-full text-xs mb-2">
+          <div style={{ padding: '20px 24px' }}>
+            {tab === 'components' ? (
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-1.5 text-gray-500 font-medium">Components</th>
-                    <th className="text-left py-1.5 text-gray-500 font-medium">To consume</th>
-                    <th className="text-left py-1.5 text-gray-500 font-medium">Units</th>
-                    <th></th>
+                  <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                    <th style={{ padding: '9px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Component Item</th>
+                    <th style={{ padding: '9px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Quantity</th>
+                    <th style={{ padding: '9px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>UoM</th>
+                    <th style={{ padding: '9px 16px' }}></th>
                   </tr>
                 </thead>
                 <tbody>
                   {components.map((c, i) => {
                     const p = products.find((x) => String(x.product_id) === String(c.product_id))
                     return (
-                      <tr key={i} className="border-b border-gray-100">
-                        <td className="py-1.5 text-gray-700">{p?.active_version?.product_name || p?.product_code || c.product_id}</td>
-                        <td className="py-1.5">{c.quantity}</td>
-                        <td className="py-1.5">{c.unit_of_measure}</td>
-                        <td className="py-1.5 text-right">
-                          <button onClick={() => removeComponent(i)} className="text-red-400 hover:text-red-600 text-xs">✕</button>
+                      <tr key={i} style={{ borderBottom: '1px solid var(--bg-muted)' }}>
+                        <td style={{ padding: '11px 16px', fontSize: 13, color: 'var(--text-primary)' }}>{p?.active_version?.product_name || p?.product_code || c.product_id}</td>
+                        <td style={{ padding: '11px 16px', fontSize: 13, color: 'var(--text-primary)' }}>{c.quantity}</td>
+                        <td style={{ padding: '11px 16px', fontSize: 13, color: 'var(--text-primary)' }}>{c.unit_of_measure}</td>
+                        <td style={{ padding: '11px 16px', textAlign: 'right' }}>
+                          <button onClick={() => removeComponent(i)} style={{ border: 'none', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer' }}><TrashIcon /></button>
                         </td>
                       </tr>
                     )
                   })}
-                  {/* Add a line row */}
+                  {/* Add Row */}
                   <tr>
-                    <td className="py-1.5">
+                    <td style={{ padding: '12px 8px' }}>
                       <select
                         value={newComp.product_id}
                         onChange={(e) => setNewComp((c) => ({ ...c, product_id: e.target.value }))}
-                        className="border-b border-gray-300 text-xs py-0.5 w-full focus:outline-none bg-transparent"
+                        style={{ height: 32, padding: '0 8px', border: '1px solid var(--border)', borderRadius: 6, fontSize: 12, width: '100%', outline: 'none' }}
                       >
-                        <option value="">Add a product...</option>
-                        {products.map((p) => (
-                          <option key={p.product_id} value={p.product_id}>
-                            {p.active_version?.product_name || p.product_code}
-                          </option>
-                        ))}
+                        <option value="">Select component...</option>
+                        {products.map((p) => <option key={p.product_id} value={p.product_id}>{p.active_version?.product_name || p.product_code}</option>)}
                       </select>
                     </td>
-                    <td className="py-1.5">
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={newComp.quantity}
-                        onChange={(e) => setNewComp((c) => ({ ...c, quantity: e.target.value }))}
-                        className="border-b border-gray-300 text-xs py-0.5 w-16 focus:outline-none bg-transparent"
-                        placeholder="Qty"
-                      />
+                    <td style={{ padding: '12px 8px' }}>
+                      <input type="number" value={newComp.quantity} onChange={(e) => setNewComp((c) => ({ ...c, quantity: e.target.value }))} placeholder="0.00" style={{ height: 32, padding: '0 8px', border: '1px solid var(--border)', borderRadius: 6, fontSize: 12, width: 80, outline: 'none' }} />
                     </td>
-                    <td className="py-1.5">
-                      <input
-                        value={newComp.unit_of_measure}
-                        onChange={(e) => setNewComp((c) => ({ ...c, unit_of_measure: e.target.value }))}
-                        className="border-b border-gray-300 text-xs py-0.5 w-16 focus:outline-none bg-transparent"
-                        placeholder="Units"
-                      />
+                    <td style={{ padding: '12px 8px' }}>
+                      <input value={newComp.unit_of_measure} onChange={(e) => setNewComp((c) => ({ ...c, unit_of_measure: e.target.value }))} placeholder="Units" style={{ height: 32, padding: '0 8px', border: '1px solid var(--border)', borderRadius: 6, fontSize: 12, width: 80, outline: 'none' }} />
                     </td>
-                    <td className="py-1.5 text-right">
-                      <button onClick={addComponent} className="text-blue-500 hover:text-blue-700 text-xs font-medium">+ Add</button>
+                    <td style={{ padding: '12px 8px', textAlign: 'right' }}>
+                      <button onClick={addComponent} style={{ background: 'var(--cerulean-light)', color: 'var(--cerulean)', border: '1px solid var(--cerulean-border)', padding: '4px 12px', borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}><PlusIcon /> Add</button>
                     </td>
                   </tr>
                 </tbody>
               </table>
-            </div>
-          )}
-
-          {/* Work Orders tab */}
-          {tab === 'operations' && (
-            <div className="pt-3">
-              <table className="w-full text-xs mb-2">
+            ) : (
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-1.5 text-gray-500 font-medium">Operation</th>
-                    <th className="text-left py-1.5 text-gray-500 font-medium">Work Center</th>
-                    <th className="text-left py-1.5 text-gray-500 font-medium">Expected Duration</th>
-                    <th></th>
+                  <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                    <th style={{ padding: '9px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Seq</th>
+                    <th style={{ padding: '9px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Work Center</th>
+                    <th style={{ padding: '9px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Duration (min)</th>
+                    <th style={{ padding: '9px 16px' }}></th>
                   </tr>
                 </thead>
                 <tbody>
                   {operations.map((op, i) => (
-                    <tr key={i} className="border-b border-gray-100">
-                      <td className="py-1.5 text-gray-700">{op.sequence_order}</td>
-                      <td className="py-1.5">{op.work_center}</td>
-                      <td className="py-1.5">{op.operation_time_mins} mins</td>
-                      <td className="py-1.5 text-right">
-                        <button onClick={() => removeOperation(i)} className="text-red-400 hover:text-red-600 text-xs">✕</button>
+                    <tr key={i} style={{ borderBottom: '1px solid var(--bg-muted)' }}>
+                      <td style={{ padding: '11px 16px', fontSize: 13, color: 'var(--text-primary)' }}>{op.sequence_order}</td>
+                      <td style={{ padding: '11px 16px', fontSize: 13, color: 'var(--text-primary)' }}>{op.work_center}</td>
+                      <td style={{ padding: '11px 16px', fontSize: 13, color: 'var(--text-primary)' }}>{op.operation_time_mins} mins</td>
+                      <td style={{ padding: '11px 16px', textAlign: 'right' }}>
+                        <button onClick={() => removeOperation(i)} style={{ border: 'none', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer' }}><TrashIcon /></button>
                       </td>
                     </tr>
                   ))}
-                  {/* Add a line row */}
                   <tr>
-                    <td className="py-1.5">
-                      <input
-                        type="number"
-                        value={newOp.sequence_order}
-                        onChange={(e) => setNewOp((o) => ({ ...o, sequence_order: e.target.value }))}
-                        className="border-b border-gray-300 text-xs py-0.5 w-12 focus:outline-none bg-transparent"
-                        placeholder="Seq"
-                      />
+                    <td style={{ padding: '12px 8px' }}>
+                      <input type="number" value={newOp.sequence_order} onChange={(e) => setNewOp((o) => ({ ...o, sequence_order: e.target.value }))} placeholder="#" style={{ height: 32, padding: '0 8px', border: '1px solid var(--border)', borderRadius: 6, fontSize: 12, width: 50, outline: 'none' }} />
                     </td>
-                    <td className="py-1.5">
-                      <input
-                        value={newOp.work_center}
-                        onChange={(e) => setNewOp((o) => ({ ...o, work_center: e.target.value }))}
-                        className="border-b border-gray-300 text-xs py-0.5 w-full focus:outline-none bg-transparent"
-                        placeholder="Work center..."
-                      />
+                    <td style={{ padding: '12px 8px' }}>
+                      <input value={newOp.work_center} onChange={(e) => setNewOp((o) => ({ ...o, work_center: e.target.value }))} placeholder="Center name..." style={{ height: 32, padding: '0 8px', border: '1px solid var(--border)', borderRadius: 6, fontSize: 12, width: '100%', outline: 'none' }} />
                     </td>
-                    <td className="py-1.5">
-                      <input
-                        type="number"
-                        value={newOp.operation_time_mins}
-                        onChange={(e) => setNewOp((o) => ({ ...o, operation_time_mins: e.target.value }))}
-                        className="border-b border-gray-300 text-xs py-0.5 w-16 focus:outline-none bg-transparent"
-                        placeholder="mins"
-                      />
+                    <td style={{ padding: '12px 8px' }}>
+                      <input type="number" value={newOp.operation_time_mins} onChange={(e) => setNewOp((o) => ({ ...o, operation_time_mins: e.target.value }))} placeholder="Mins" style={{ height: 32, padding: '0 8px', border: '1px solid var(--border)', borderRadius: 6, fontSize: 12, width: 80, outline: 'none' }} />
                     </td>
-                    <td className="py-1.5 text-right">
-                      <button onClick={addOperation} className="text-blue-500 hover:text-blue-700 text-xs font-medium">+ Add</button>
+                    <td style={{ padding: '12px 8px', textAlign: 'right' }}>
+                      <button onClick={addOperation} style={{ background: 'var(--cerulean-light)', color: 'var(--cerulean)', border: '1px solid var(--cerulean-border)', padding: '4px 12px', borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}><PlusIcon /> Add</button>
                     </td>
                   </tr>
                 </tbody>
               </table>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>

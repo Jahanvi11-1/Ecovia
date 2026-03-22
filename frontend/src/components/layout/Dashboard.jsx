@@ -19,13 +19,27 @@ import VersionHistoryReport from '../reports/VersionHistoryReport'
 
 export default function Dashboard() {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div style={{ 
+      background: 'var(--bg-page)', 
+      minHeight: '100vh', 
+      fontFamily: "'Inter', sans-serif",
+      WebkitFontSmoothing: 'antialiased',
+      MozOsxFontSmoothing: 'grayscale'
+    }}>
+      {/* Fixed UI Components */}
       <GlobalNav />
       <ProfilePanel />
       <MasterMenuSidebar />
 
-      <main className="max-w-7xl mx-auto px-4 py-6">
+      {/* Primary Content Scroll Area */}
+      <main style={{ 
+        maxWidth: 1200, 
+        margin: '0 auto', 
+        padding: '28px 32px',
+        width: '100%'
+      }}>
         <Routes>
+          {/* Logical Routing - No Changes to Logic */}
           <Route index element={<Navigate to="/ecos" replace />} />
           <Route path="products" element={<ProductList />} />
           <Route path="products/new" element={<ProductCreateForm />} />

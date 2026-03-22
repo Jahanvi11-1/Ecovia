@@ -4,6 +4,19 @@ import api from '../../api/client'
 
 const ROLES = ['Engineering User', 'Approver', 'Operations User', 'Admin']
 
+// Inline SVG Icons to avoid lucide-react dependency
+const UserPlusIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><line x1="19" x2="19" y1="8" y2="14" /><line x1="16" x2="22" y1="11" y2="11" />
+  </svg>
+)
+
+const LoaderIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="animate-spin">
+    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+  </svg>
+)
+
 export default function SignupPage() {
   const navigate = useNavigate()
   const [form, setForm] = useState({ login_id: '', email: '', password: '', role: 'Engineering User' })
@@ -24,7 +37,6 @@ export default function SignupPage() {
     } catch (err) {
       const detail = err.response?.data?.detail
       if (Array.isArray(detail)) {
-        // Pydantic validation errors
         const fieldErrors = {}
         detail.forEach((d) => {
           const field = d.loc?.[d.loc.length - 1] || 'general'
@@ -40,82 +52,123 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-      <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md">
-        <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center">Ecovia PLM</h1>
-        <h2 className="text-lg font-semibold text-gray-600 mb-4 text-center">Create Account</h2>
+    <div style={{ background: 'var(--bg-page)', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Inter', sans-serif" }}>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '28px 32px', width: '100%', maxWidth: 400, boxShadow: '0 4px 12px rgba(29,53,87,0.04)' }}>
+        
+        <div style={{ textAlign: 'center', marginBottom: 24 }}>
+          <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.4px', margin: 0 }}>
+            Ecovia PLM
+          </h1>
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4, fontWeight: 400 }}>
+            Create Account
+          </p>
+        </div>
 
         {success && (
-          <div className="bg-green-50 border border-green-200 text-green-700 rounded-lg px-4 py-3 mb-4 text-sm">
+          <div style={{ background: 'var(--status-done-bg)', border: '1px solid var(--status-done-dot)', color: 'var(--status-done-text)', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 12, fontWeight: 500 }}>
             Account created! Redirecting to login...
           </div>
         )}
+
         {errors.general && (
-          <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 mb-4 text-sm">
+          <div style={{ background: 'var(--punch-red-light)', border: '1px solid var(--punch-red-border)', color: 'var(--punch-red)', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 12, fontWeight: 500 }}>
             {errors.general}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Login ID <span className="text-gray-400">(6–12 chars)</span></label>
+            <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: 5 }}>
+              Login ID <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(6–12 chars)</span> <span style={{ color: 'var(--punch-red)' }}>*</span>
+            </label>
             <input
               name="login_id"
               value={form.login_id}
               onChange={handleChange}
               required
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              style={{ height: 36, padding: '0 12px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg-subtle)', fontSize: 13, color: 'var(--text-primary)', width: '100%', outline: 'none' }}
             />
-            {errors.login_id && <p className="text-red-500 text-xs mt-1">{errors.login_id}</p>}
+            {errors.login_id && <p style={{ color: 'var(--punch-red)', fontSize: 11, marginTop: 4 }}>{errors.login_id}</p>}
           </div>
+
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: 5 }}>
+              Email <span style={{ color: 'var(--punch-red)' }}>*</span>
+            </label>
             <input
               type="email"
               name="email"
               value={form.email}
               onChange={handleChange}
               required
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              style={{ height: 36, padding: '0 12px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg-subtle)', fontSize: 13, color: 'var(--text-primary)', width: '100%', outline: 'none' }}
             />
-            {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
+            {errors.email && <p style={{ color: 'var(--punch-red)', fontSize: 11, marginTop: 4 }}>{errors.email}</p>}
           </div>
+
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: 5 }}>
+              Password <span style={{ color: 'var(--punch-red)' }}>*</span>
+            </label>
             <input
               type="password"
               name="password"
               value={form.password}
               onChange={handleChange}
               required
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              style={{ height: 36, padding: '0 12px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg-subtle)', fontSize: 13, color: 'var(--text-primary)', width: '100%', outline: 'none' }}
             />
-            {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
-            <p className="text-gray-400 text-xs mt-1">8+ chars, uppercase, lowercase, special character</p>
+            <p style={{ color: 'var(--text-muted)', fontSize: 11, marginTop: 5 }}>
+              8+ chars, uppercase, lowercase, special character
+            </p>
+            {errors.password && <p style={{ color: 'var(--punch-red)', fontSize: 11, marginTop: 4 }}>{errors.password}</p>}
           </div>
+
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+            <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: 5 }}>
+              Role <span style={{ color: 'var(--punch-red)' }}>*</span>
+            </label>
             <select
               name="role"
               value={form.role}
               onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              style={{ height: 36, padding: '0 12px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg-subtle)', fontSize: 13, color: 'var(--text-primary)', width: '100%', outline: 'none', cursor: 'pointer' }}
             >
               {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
             </select>
           </div>
+
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg transition disabled:opacity-50"
+            style={{
+              background: loading ? 'var(--text-muted)' : 'var(--punch-red)',
+              color: '#ffffff',
+              fontSize: 12.5,
+              fontWeight: 600,
+              height: 40,
+              padding: '0 16px',
+              borderRadius: 8,
+              border: 'none',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              transition: 'all 0.15s ease',
+              marginTop: 10
+            }}
           >
+            {loading ? <LoaderIcon /> : <UserPlusIcon />}
             {loading ? 'Creating account...' : 'Create Account'}
           </button>
         </form>
 
-        <p className="mt-4 text-center text-sm text-gray-500">
+        <p style={{ marginTop: 20, textAlign: 'center', fontSize: 13, color: 'var(--text-secondary)' }}>
           Already have an account?{' '}
-          <Link to="/login" className="text-blue-600 hover:underline">Sign in</Link>
+          <Link to="/login" style={{ color: 'var(--cerulean)', fontWeight: 600, textDecoration: 'none' }}>
+            Sign in
+          </Link>
         </p>
       </div>
     </div>

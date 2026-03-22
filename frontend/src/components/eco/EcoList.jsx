@@ -4,16 +4,32 @@ import api from '../../api/client'
 import useUiStore from '../../store/uiStore'
 import EcoKanban from './EcoKanban'
 
-// Status dot: green=Applied/approved, white=Open/in-progress, red=Rejected/cancelled
-function StatusDot({ status }) {
-  const colors = {
-    Applied: 'bg-green-500',
-    Open: 'bg-white border-2 border-gray-400',
-    Validated: 'bg-yellow-400',
-    Rejected: 'bg-red-500',
+// Standardized Stage Pill Pattern for ECOs
+function StageBadge({ status }) {
+  const configs = {
+    Applied: { bg: 'var(--status-done-bg)', text: 'var(--status-done-text)', dot: 'var(--status-done-dot)' },
+    Open: { bg: 'var(--status-new-bg)', text: 'var(--status-new-text)', dot: 'var(--status-new-dot)' },
+    Validated: { bg: 'var(--status-validate-bg)', text: 'var(--status-validate-text)', dot: 'var(--status-validate-dot)' },
+    Rejected: { bg: 'var(--status-applied-bg)', text: 'var(--status-applied-text)', dot: 'var(--status-applied-dot)' },
   }
+  const cfg = configs[status] || configs['Open']
+
   return (
-    <span className={`inline-block w-3 h-3 rounded-full ${colors[status] || 'bg-gray-300'}`} title={status} />
+    <span style={{
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: 6,
+      padding: '3px 10px',
+      borderRadius: 20,
+      background: cfg.bg,
+      color: cfg.text,
+      fontSize: 11,
+      fontWeight: 600,
+      whiteSpace: 'nowrap'
+    }}>
+      <span style={{ width: 6, height: 6, borderRadius: '50%', background: cfg.dot, flexShrink: 0 }}/>
+      {status}
+    </span>
   )
 }
 
@@ -39,45 +55,76 @@ export default function EcoList() {
     )
   })
 
-  if (loading) return <div className="text-gray-500 py-8 text-center">Loading...</div>
+  if (loading) return <div style={{ color: 'var(--text-muted)', padding: '40px 0', textAlign: 'center', fontSize: 13 }}>Loading change orders...</div>
 
   if (viewMode === 'kanban') {
     return <EcoKanban ecos={filtered} stages={stages} />
   }
 
   return (
-    <div className="bg-white rounded border border-gray-200 overflow-hidden">
-      <table className="w-full text-sm">
-        <thead className="bg-gray-50 border-b border-gray-200">
-          <tr>
-            <th className="text-left px-4 py-3 font-semibold text-gray-600 w-8"></th>
-            <th className="text-left px-4 py-3 font-semibold text-gray-600">Name</th>
-            <th className="text-left px-4 py-3 font-semibold text-gray-600">ECO Type</th>
-            <th className="text-left px-4 py-3 font-semibold text-gray-600">Product</th>
+    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <thead>
+          <tr style={{ background: 'var(--bg-subtle)', borderBottom: '1px solid var(--border)' }}>
+            <th style={{ padding: '9px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Title
+            </th>
+            <th style={{ padding: '9px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Type
+            </th>
+            <th style={{ padding: '9px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Target Product
+            </th>
+            <th style={{ padding: '9px 16px', textAlign: 'right', fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Current Status
+            </th>
           </tr>
         </thead>
         <tbody>
-          {filtered.length === 0 && (
+          {filtered.length === 0 ? (
             <tr>
-              <td colSpan={4} className="text-center py-10 text-gray-400">No ECOs found</td>
+              <td colSpan={4} style={{ padding: '48px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
+                No Engineering Change Orders found.
+              </td>
             </tr>
+          ) : (
+            filtered.map((e, index) => (
+              <tr
+                key={e.eco_id}
+                onClick={() => navigate(`/ecos/${e.eco_id}`)}
+                onMouseEnter={(e) => e.currentTarget.style.background = '#fafcff'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                style={{ 
+                  borderBottom: index === filtered.length - 1 ? 'none' : '1px solid #f1f5f9',
+                  cursor: 'pointer',
+                  transition: 'background 0.1s ease'
+                }}
+              >
+                <td style={{ padding: '11px 16px' }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{e.title}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>ID: ECO-{e.eco_id}</div>
+                </td>
+                <td style={{ padding: '11px 16px' }}>
+                   <span style={{ 
+                     fontSize: 11, 
+                     fontWeight: 600, 
+                     padding: '2px 8px', 
+                     borderRadius: 4, 
+                     background: e.eco_type === 'BoM' ? 'var(--type-bom-bg)' : 'var(--type-product-bg)',
+                     color: e.eco_type === 'BoM' ? 'var(--type-bom-text)' : 'var(--type-product-text)'
+                   }}>
+                     {e.eco_type}
+                   </span>
+                </td>
+                <td style={{ padding: '11px 16px', fontSize: 13, color: 'var(--text-primary)' }}>
+                  {e.target_product?.product_code || e.target_product_id || '—'}
+                </td>
+                <td style={{ padding: '11px 16px', textAlign: 'right' }}>
+                  <StageBadge status={e.status} />
+                </td>
+              </tr>
+            ))
           )}
-          {filtered.map((e) => (
-            <tr
-              key={e.eco_id}
-              onClick={() => navigate(`/ecos/${e.eco_id}`)}
-              className="border-b border-gray-100 hover:bg-blue-50 cursor-pointer"
-            >
-              <td className="px-4 py-3">
-                <StatusDot status={e.status} />
-              </td>
-              <td className="px-4 py-3 font-medium text-gray-800">{e.title}</td>
-              <td className="px-4 py-3 text-gray-600">{e.eco_type}</td>
-              <td className="px-4 py-3 text-gray-600">
-                {e.target_product?.product_code || e.target_product_id || '—'}
-              </td>
-            </tr>
-          ))}
         </tbody>
       </table>
     </div>

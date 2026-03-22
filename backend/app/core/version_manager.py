@@ -172,15 +172,19 @@ class VersionManager:
     async def _create_new_version(self, eco: Eco, prev_version_number: int, prev_snapshot: dict, session: AsyncSession) -> None:
         """Insert a new ProductVersion with incremented version_number and status='Active'."""
         changes = eco.proposed_changes or {}
+        
+        # Filter out snapshot fields (they're used for display, not for actual version creation)
+        actual_changes = {k: v for k, v in changes.items() if not k.startswith("snapshot_")}
+        
         new_version = ProductVersion(
             product_id=eco.target_product_id,
             version_number=prev_version_number + 1,
             # Always carry forward product_name — never overwrite it via ECO
             product_name=prev_snapshot.get("product_name") or "",
             # Apply proposed changes; fall back to previous values if not in changes
-            sale_price=changes["sale_price"] if "sale_price" in changes else prev_snapshot.get("sale_price"),
-            cost_price=changes["cost_price"] if "cost_price" in changes else prev_snapshot.get("cost_price"),
-            attachments_url=changes["attachments_url"] if "attachments_url" in changes else prev_snapshot.get("attachments_url"),
+            sale_price=actual_changes["sale_price"] if "sale_price" in actual_changes else prev_snapshot.get("sale_price"),
+            cost_price=actual_changes["cost_price"] if "cost_price" in actual_changes else prev_snapshot.get("cost_price"),
+            attachments_url=actual_changes["attachments_url"] if "attachments_url" in actual_changes else prev_snapshot.get("attachments_url"),
             status="Active",
             is_latest=True,
             created_by=eco.created_by,
@@ -202,6 +206,7 @@ class VersionManager:
             return
 
         changes = eco.proposed_changes or {}
+        # Filter out snapshot fields
         for field in ("sale_price", "cost_price", "attachments_url"):
             if field in changes and changes[field] is not None:
                 setattr(current, field, changes[field])

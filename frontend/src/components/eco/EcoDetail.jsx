@@ -4,6 +4,20 @@ import api from '../../api/client'
 import useAuthStore from '../../store/authStore'
 import EcoDiffView from '../eco/EcoDiffView'
 
+// Zero-install SVG Icons
+const ArrowLeftIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
+)
+const CheckIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+)
+const XIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+)
+const ExternalLinkIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14 21 3"/></svg>
+)
+
 export default function EcoDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -36,140 +50,130 @@ export default function EcoDetail() {
     }
   }
 
-  if (loading) return <div className="text-gray-500 py-8 text-center">Loading...</div>
-  if (!eco) return <div className="text-red-500 py-8 text-center">ECO not found</div>
+  if (loading) return <div style={{ color: 'var(--text-muted)', padding: '40px 0', textAlign: 'center', fontSize: 13 }}>Loading ECO details...</div>
+  if (!eco) return <div style={{ color: 'var(--punch-red)', padding: '40px 0', textAlign: 'center', fontSize: 13 }}>Engineering Change Order not found</div>
 
   const stage = eco.current_stage
   const requiresApproval = stage?.requires_approval
   const isBom = eco.eco_type === 'BoM'
 
-  // Status dot color
-  const dotColor = eco.status === 'Applied'
-    ? 'bg-green-500'
-    : eco.status === 'Rejected'
-    ? 'bg-red-500'
-    : 'bg-white border-2 border-gray-400'
-
   return (
-    <div className="max-w-3xl">
-      <button onClick={() => navigate('/ecos')} className="text-blue-600 hover:underline text-sm mb-3 inline-block">
-        ← Back
-      </button>
-
-      {/* Top action bar */}
-      <div className="flex items-center gap-2 mb-4 flex-wrap">
-        {/* Approval button — only if stage requires approval and user is approver */}
-        {!isTerminal && requiresApproval && isApprover && (
-          <button
-            onClick={() => doAction('approve')}
-            disabled={actionLoading}
-            className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm font-medium px-4 py-1.5 rounded transition disabled:opacity-50"
-          >
-            Approval
-          </button>
-        )}
-
-        {/* Open BoM / Open Product */}
-        {isBom && eco.target_bom_id && (
-          <button
-            onClick={() => navigate(`/boms/${eco.target_bom_id}`)}
-            className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm font-medium px-4 py-1.5 rounded transition"
-          >
-            Open Bill of Materials
-          </button>
-        )}
-        {!isBom && eco.target_product_id && (
-          <button
-            onClick={() => navigate(`/products/${eco.target_product_id}`)}
-            className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm font-medium px-4 py-1.5 rounded transition"
-          >
-            Open Product Form
-          </button>
-        )}
-
-        {/* Changes button — scrolls to diff */}
-        <button
-          onClick={() => document.getElementById('eco-diff')?.scrollIntoView({ behavior: 'smooth' })}
-          className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm font-medium px-4 py-1.5 rounded transition"
-        >
-          Changes
-        </button>
-
-        {/* Validate / Apply */}
-        {!isTerminal && !requiresApproval && (eco.status === 'Open') && (
-          <button
-            onClick={() => doAction('validate')}
-            disabled={actionLoading}
-            className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm font-medium px-4 py-1.5 rounded transition disabled:opacity-50"
-          >
-            Validate
-          </button>
-        )}
-        {!isTerminal && eco.status === 'Validated' && isApprover && (
-          <button
-            onClick={() => doAction('apply')}
-            disabled={actionLoading}
-            className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm font-medium px-4 py-1.5 rounded transition disabled:opacity-50"
-          >
-            Apply
-          </button>
-        )}
-
-        {/* Reject */}
-        {!isTerminal && isApprover && (
-          <button
-            onClick={() => doAction('reject')}
-            disabled={actionLoading}
-            className="bg-white border border-red-200 hover:bg-red-50 text-red-600 text-sm font-medium px-4 py-1.5 rounded transition disabled:opacity-50"
-          >
-            Reject
-          </button>
-        )}
-
-        {/* Status dot + label */}
-        <div className="ml-auto flex items-center gap-2">
-          <span className={`w-3 h-3 rounded-full ${dotColor}`} />
-          <span className="text-xs text-gray-500">{eco.status}</span>
-          {stage && <span className="text-xs text-gray-400">· {stage.stage_name}</span>}
+    <div style={{ background: 'var(--bg-page)', minHeight: '100vh', fontFamily: "'Inter', sans-serif" }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 32px' }}>
+        
+        {/* Navigation & Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+          <div>
+            <button 
+              onClick={() => navigate('/ecos')} 
+              style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'transparent', border: 'none', color: 'var(--cerulean)', fontSize: 13, fontWeight: 500, cursor: 'pointer', marginBottom: 8, padding: 0 }}
+            >
+              <ArrowLeftIcon /> Back to ECO List
+            </button>
+            <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.4px', margin: 0 }}>
+              {eco.title}
+            </h1>
+          </div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+             {/* Status Pill Component Replacement */}
+             <span style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '4px 12px',
+                borderRadius: 20,
+                background: eco.status === 'Applied' ? 'var(--status-done-bg)' : eco.status === 'Rejected' ? 'var(--status-applied-bg)' : 'var(--bg-muted)',
+                color: eco.status === 'Applied' ? 'var(--status-done-text)' : eco.status === 'Rejected' ? 'var(--status-applied-text)' : 'var(--text-secondary)',
+                fontSize: 12,
+                fontWeight: 600,
+              }}>
+                <span style={{ 
+                  width: 6, height: 6, borderRadius: '50%', 
+                  background: eco.status === 'Applied' ? 'var(--status-done-dot)' : eco.status === 'Rejected' ? 'var(--status-applied-dot)' : 'var(--text-muted)' 
+                }}/>
+                {eco.status}
+              </span>
+          </div>
         </div>
-      </div>
 
-      {error && (
-        <div className="mb-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">{error}</div>
-      )}
+        {/* Global Action Bar */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
+          {!isTerminal && requiresApproval && isApprover && (
+            <button onClick={() => doAction('approve')} disabled={actionLoading}
+              style={{ background: 'var(--surface)', color: 'var(--text-primary)', fontSize: 12.5, fontWeight: 500, height: 36, padding: '0 16px', borderRadius: 8, border: '1px solid var(--border)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <CheckIcon /> Approval
+            </button>
+          )}
 
-      {/* Readonly form */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-4 mb-6">
-        <Field label="Title*" value={eco.title} />
-        <Field label="ECO Type*" value={eco.eco_type === 'BoM' ? 'Bill of Materials' : 'Product'} />
-        <Field label="Product*" value={eco.target_product?.product_code || eco.target_product_id || '—'} />
-        {isBom && (
-          <Field label="Bill of Materials*" value={eco.target_bom?.bom_version || eco.target_bom_id || '—'} />
-        )}
-        <Field label="User*" value={eco.created_by || '—'} />
-        <Field
-          label="Effective Date"
-          value={eco.effective_date ? new Date(eco.effective_date).toLocaleString() : '—'}
-        />
-        <div className="flex items-center gap-4">
-          <span className="w-36 text-sm text-gray-600 flex-shrink-0">Version Update</span>
-          <input type="checkbox" checked={eco.version_update_toggle} readOnly className="w-4 h-4" />
+          {isBom && eco.target_bom_id && (
+            <button onClick={() => navigate(`/boms/${eco.target_bom_id}`)}
+              style={{ background: 'var(--surface)', color: 'var(--text-primary)', fontSize: 12.5, fontWeight: 500, height: 36, padding: '0 16px', borderRadius: 8, border: '1px solid var(--border)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <ExternalLinkIcon /> View BoM
+            </button>
+          )}
+
+          {!isTerminal && !requiresApproval && (eco.status === 'Open') && (
+            <button onClick={() => doAction('validate')} disabled={actionLoading}
+              style={{ background: 'var(--punch-red)', color: '#ffffff', fontSize: 12.5, fontWeight: 600, height: 36, padding: '0 16px', borderRadius: 8, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+              Validate
+            </button>
+          )}
+
+          {!isTerminal && eco.status === 'Validated' && isApprover && (
+            <button onClick={() => doAction('apply')} disabled={actionLoading}
+              style={{ background: 'var(--punch-red)', color: '#ffffff', fontSize: 12.5, fontWeight: 600, height: 36, padding: '0 16px', borderRadius: 8, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+              Apply Changes
+            </button>
+          )}
+
+          {!isTerminal && isApprover && (
+            <button onClick={() => doAction('reject')} disabled={actionLoading}
+              style={{ background: 'var(--punch-red-light)', color: 'var(--punch-red)', fontSize: 12.5, fontWeight: 600, height: 36, padding: '0 16px', borderRadius: 8, border: '1px solid var(--punch-red-border)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <XIcon /> Reject
+            </button>
+          )}
         </div>
-      </div>
 
-      {/* Proposed changes editor — Product ECO only, before Applied */}
-      {!isBom && eco.status !== 'Applied' && eco.status !== 'Rejected' && (
-        <ProposedChangesEditor eco={eco} onSaved={fetchEco} />
-      )}
+        {error && (
+          <div style={{ background: 'var(--punch-red-light)', border: '1px solid var(--punch-red-border)', color: 'var(--punch-red)', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 12, fontWeight: 500 }}>
+            {error}
+          </div>
+        )}
 
-      {/* BoM editor — BoM ECO only, before Applied */}
-      {isBom && eco.target_bom_id && eco.status !== 'Applied' && eco.status !== 'Rejected' && (
-        <BomChangesEditor bomId={eco.target_bom_id} />
-      )}
+        {/* Readonly Summary Card */}
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '24px', marginBottom: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px 40px' }}>
+            <Field label="Title" value={eco.title} />
+            <Field label="ECO Type" value={eco.eco_type === 'BoM' ? 'Bill of Materials' : 'Product'} />
+            <Field label="Target Item" value={eco.target_product?.product_code || eco.target_product_id || '—'} />
+            {isBom && <Field label="Version" value={eco.target_bom?.bom_version || eco.target_bom_id || '—'} />}
+            <Field label="Originator" value={eco.created_by || '—'} />
+            <Field label="Effective Date" value={eco.effective_date ? new Date(eco.effective_date).toLocaleString() : '—'} />
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              <span style={{ width: 140, fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)' }}>Auto-Update Version</span>
+              <input type="checkbox" checked={eco.version_update_toggle} readOnly style={{ width: 16, height: 16, accentColor: 'var(--punch-red)' }} />
+            </div>
+          </div>
+        </div>
 
-      {/* Diff / Changes section */}
-      <div id="eco-diff">
-        <EcoDiffView ecoId={id} ecoType={eco.eco_type} targetBomId={eco.target_bom_id} snapshot={eco.proposed_changes} />
+        {/* Dynamic Editors */}
+        {!isBom && !isTerminal && (
+          <ProposedChangesEditor eco={eco} onSaved={fetchEco} />
+        )}
+
+        {isBom && eco.target_bom_id && !isTerminal && (
+          <BomChangesEditor bomId={eco.target_bom_id} />
+        )}
+
+        {/* Comparison Section */}
+        <div id="eco-diff" style={{ marginTop: 24 }}>
+          <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+             <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>Change Comparison</span>
+             <div style={{ height: 1, flex: 1, background: 'var(--border)' }} />
+          </div>
+          <EcoDiffView ecoId={id} ecoType={eco.eco_type} targetBomId={eco.target_bom_id} snapshot={eco.proposed_changes} />
+        </div>
       </div>
     </div>
   )
@@ -177,17 +181,19 @@ export default function EcoDetail() {
 
 function Field({ label, value }) {
   return (
-    <div className="flex items-center gap-4">
-      <span className="w-36 text-sm text-gray-600 flex-shrink-0">{label}</span>
-      <span className="flex-1 border border-gray-200 rounded px-3 py-2 text-sm bg-gray-50 text-gray-700">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+      <span style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>{label}</span>
+      <div style={{ height: 36, padding: '0 12px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg-muted)', fontSize: 13, color: 'var(--text-primary)', display: 'flex', alignItems: 'center' }}>
         {value}
-      </span>
+      </div>
     </div>
   )
 }
 
 function ProposedChangesEditor({ eco, onSaved }) {
   const changes = eco.proposed_changes || {}
+  // Check if this is a newly created ECO with snapshots (indicating no edits yet)
+  const hasSnapshots = changes.snapshot_sale_price !== undefined || changes.snapshot_cost_price !== undefined
   const [form, setForm] = useState({
     sale_price: changes.sale_price ?? '',
     cost_price: changes.cost_price ?? '',
@@ -203,6 +209,14 @@ function ProposedChangesEditor({ eco, onSaved }) {
     setError('')
     try {
       const proposed = {
+        // Preserve snapshots if they exist
+        ...(hasSnapshots && {
+          snapshot_product_name: changes.snapshot_product_name,
+          snapshot_sale_price: changes.snapshot_sale_price,
+          snapshot_cost_price: changes.snapshot_cost_price,
+          snapshot_attachments_url: changes.snapshot_attachments_url,
+        }),
+        // Add proposed changes
         sale_price: form.sale_price !== '' ? parseFloat(form.sale_price) : null,
         cost_price: form.cost_price !== '' ? parseFloat(form.cost_price) : null,
         attachments_url: form.attachments_url || null,
@@ -217,38 +231,53 @@ function ProposedChangesEditor({ eco, onSaved }) {
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-5 mb-6">
-      <div className="flex items-center justify-between mb-4">
-        <span className="text-sm font-semibold text-gray-700">Proposed Changes</span>
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1 rounded transition disabled:opacity-50"
-        >
-          {saving ? 'Saving...' : 'Save Changes'}
+    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '20px 24px', marginBottom: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>Update Proposed Values</span>
+        <button onClick={handleSave} disabled={saving}
+          style={{ background: 'var(--punch-red)', color: '#ffffff', fontSize: 11, fontWeight: 600, height: 28, padding: '0 12px', borderRadius: 8, border: 'none', cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
+          {saving ? 'Saving...' : 'Save Draft'}
         </button>
       </div>
-      {error && <div className="text-sm text-red-600 mb-3">{error}</div>}
-      <div className="space-y-3">
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">New Sales Price</label>
-            <input type="number" step="0.01" value={form.sale_price} onChange={set('sale_price')}
-              className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
+
+      {/* Show current/snapshot values if available */}
+      {hasSnapshots && (
+        <div style={{ marginBottom: 20, padding: '12px 16px', background: 'var(--bg-subtle)', borderRadius: 8, border: '1px solid var(--border)' }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: 10, letterSpacing: '0.05em' }}>Current Values</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+            <div>
+              <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 4 }}>Current Sales Price</div>
+              <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>{changes.snapshot_sale_price != null ? changes.snapshot_sale_price : '—'}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 4 }}>Current Cost Price</div>
+              <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>{changes.snapshot_cost_price != null ? changes.snapshot_cost_price : '—'}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 4 }}>Current Attachments URL</div>
+              <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>{changes.snapshot_attachments_url ? changes.snapshot_attachments_url.substring(0, 40) + (changes.snapshot_attachments_url.length > 40 ? '...' : '') : '—'}</div>
+            </div>
           </div>
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">New Cost Price</label>
-            <input type="number" step="0.01" value={form.cost_price} onChange={set('cost_price')}
-              className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
-          </div>
+        </div>
+      )}
+      
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+        <div>
+          <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: 5 }}>Proposed Sales Price</label>
+          <input type="number" step="0.01" value={form.sale_price} onChange={set('sale_price')}
+            style={{ height: 36, padding: '0 12px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg-subtle)', fontSize: 13, width: '100%', outline: 'none' }} />
         </div>
         <div>
-          <label className="block text-xs text-gray-500 mb-1">New Attachments URL</label>
+          <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: 5 }}>Proposed Cost Price</label>
+          <input type="number" step="0.01" value={form.cost_price} onChange={set('cost_price')}
+            style={{ height: 36, padding: '0 12px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg-subtle)', fontSize: 13, width: '100%', outline: 'none' }} />
+        </div>
+        <div>
+          <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: 5 }}>Proposed Attachments URL</label>
           <input type="text" value={form.attachments_url} onChange={set('attachments_url')}
-            className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
+            style={{ height: 36, padding: '0 12px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg-subtle)', fontSize: 13, width: '100%', outline: 'none' }} />
         </div>
       </div>
-      <p className="text-xs text-gray-400 mt-3">These values will be applied to the product when the ECO is Applied.</p>
     </div>
   )
 }
@@ -257,16 +286,11 @@ function BomChangesEditor({ bomId }) {
   const [bom, setBom] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-
-  // New component row
   const [newComp, setNewComp] = useState({ product_id: '', quantity: '', unit_of_measure: 'Units' })
-  // New operation row
   const [newOp, setNewOp] = useState({ work_center: '', operation_time_mins: '', sequence_order: '' })
-
   const [products, setProducts] = useState([])
 
-  const fetchBom = () =>
-    api.get(`/boms/${bomId}`).then((res) => setBom(res.data)).finally(() => setLoading(false))
+  const fetchBom = () => api.get(`/boms/${bomId}`).then((res) => setBom(res.data)).finally(() => setLoading(false))
 
   useEffect(() => {
     fetchBom()
@@ -275,7 +299,6 @@ function BomChangesEditor({ bomId }) {
 
   const addComponent = async () => {
     if (!newComp.product_id || !newComp.quantity) return
-    setError('')
     try {
       await api.post(`/boms/${bomId}/components`, {
         product_id: parseInt(newComp.product_id),
@@ -284,23 +307,11 @@ function BomChangesEditor({ bomId }) {
       })
       setNewComp({ product_id: '', quantity: '', unit_of_measure: 'Units' })
       fetchBom()
-    } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to add component')
-    }
-  }
-
-  const removeComponent = async (componentId) => {
-    try {
-      await api.delete(`/boms/${bomId}/components/${componentId}`)
-      fetchBom()
-    } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to remove component')
-    }
+    } catch (err) { setError('Failed to add component') }
   }
 
   const addOperation = async () => {
     if (!newOp.work_center || !newOp.operation_time_mins) return
-    setError('')
     try {
       await api.post(`/boms/${bomId}/operations`, {
         work_center: newOp.work_center,
@@ -309,144 +320,107 @@ function BomChangesEditor({ bomId }) {
       })
       setNewOp({ work_center: '', operation_time_mins: '', sequence_order: '' })
       fetchBom()
-    } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to add operation')
-    }
+    } catch (err) { setError('Failed to add operation') }
   }
 
-  const removeOperation = async (operationId) => {
-    try {
-      await api.delete(`/boms/${bomId}/operations/${operationId}`)
-      fetchBom()
-    } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to remove operation')
-    }
-  }
-
-  if (loading) return <div className="text-gray-400 text-sm py-4">Loading BoM...</div>
-  if (!bom) return null
+  if (loading) return null
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-5 mb-6 space-y-5">
-      <span className="text-sm font-semibold text-gray-700">BoM Changes</span>
-      {error && <div className="text-sm text-red-600">{error}</div>}
-
-      {/* Components */}
-      <div>
-        <div className="text-xs font-semibold text-gray-600 mb-2">Components</div>
-        <table className="w-full text-sm mb-2">
+    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden', marginBottom: 14 }}>
+      <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', background: 'var(--bg-subtle)' }}>
+        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>Live BoM Redlining</span>
+      </div>
+      
+      <div style={{ padding: '20px' }}>
+        {/* Components Table Pattern */}
+        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 20 }}>
           <thead>
-            <tr className="border-b border-gray-200">
-              <th className="text-left py-1.5 text-xs text-gray-500 font-medium">Product</th>
-              <th className="text-left py-1.5 text-xs text-gray-500 font-medium">Qty</th>
-              <th className="text-left py-1.5 text-xs text-gray-500 font-medium">UoM</th>
-              <th />
+            <tr style={{ borderBottom: '1px solid var(--border)' }}>
+              <th style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Item</th>
+              <th style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Qty</th>
+              <th style={{ padding: '8px 12px' }} />
             </tr>
           </thead>
           <tbody>
             {(bom.components || []).map((c) => (
-              <tr key={c.component_id} className="border-b border-gray-50">
-                <td className="py-1.5 text-gray-700">
-                  {products.find((p) => p.product_id === c.product_id)?.active_version?.product_name || `Product #${c.product_id}`}
-                </td>
-                <td className="py-1.5 text-gray-700">{c.quantity}</td>
-                <td className="py-1.5 text-gray-500">{c.unit_of_measure}</td>
-                <td className="py-1.5">
-                  <button onClick={() => removeComponent(c.component_id)} className="text-red-400 hover:text-red-600 text-xs">Remove</button>
+              <tr key={c.component_id} style={{ borderBottom: '1px solid var(--bg-muted)' }}>
+                <td style={{ padding: '8px 12px', fontSize: 13 }}>{products.find((p) => p.product_id === c.product_id)?.active_version?.product_name || `ID #${c.product_id}`}</td>
+                <td style={{ padding: '8px 12px', fontSize: 13 }}>{c.quantity} {c.unit_of_measure}</td>
+                <td style={{ padding: '8px 12px', textAlign: 'right' }}>
+                  <button onClick={() => api.delete(`/boms/${bomId}/components/${c.component_id}`).then(fetchBom)} 
+                    style={{ border: 'none', background: 'transparent', color: 'var(--punch-red)', fontSize: 11, cursor: 'pointer' }}>Remove</button>
                 </td>
               </tr>
             ))}
-          </tbody>
-        </table>
-        {/* Add component row */}
-        <div className="flex gap-2 items-end">
-          <div className="flex-1">
-            <select
-              value={newComp.product_id}
-              onChange={(e) => setNewComp((f) => ({ ...f, product_id: e.target.value }))}
-              className="w-full border border-gray-300 rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-400"
-            >
-              <option value="">Select product...</option>
-              {products.map((p) => (
-                <option key={p.product_id} value={p.product_id}>
-                  {p.active_version?.product_name || p.product_code}
-                </option>
-              ))}
-            </select>
-          </div>
-          <input
-            type="number" min="0" step="0.01" placeholder="Qty"
-            value={newComp.quantity}
-            onChange={(e) => setNewComp((f) => ({ ...f, quantity: e.target.value }))}
-            className="w-20 border border-gray-300 rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-400"
-          />
-          <input
-            type="text" placeholder="UoM"
-            value={newComp.unit_of_measure}
-            onChange={(e) => setNewComp((f) => ({ ...f, unit_of_measure: e.target.value }))}
-            className="w-20 border border-gray-300 rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-400"
-          />
-          <button
-            onClick={addComponent}
-            className="bg-green-500 hover:bg-green-600 text-white text-xs font-semibold px-3 py-1.5 rounded transition"
-          >
-            Add
-          </button>
-        </div>
-      </div>
-
-      {/* Operations */}
-      <div>
-        <div className="text-xs font-semibold text-gray-600 mb-2">Work Orders</div>
-        <table className="w-full text-sm mb-2">
-          <thead>
-            <tr className="border-b border-gray-200">
-              <th className="text-left py-1.5 text-xs text-gray-500 font-medium">Work Center</th>
-              <th className="text-left py-1.5 text-xs text-gray-500 font-medium">Time (mins)</th>
-              <th className="text-left py-1.5 text-xs text-gray-500 font-medium">Seq</th>
-              <th />
+            <tr>
+              <td style={{ padding: '12px 8px' }}>
+                <select value={newComp.product_id} onChange={(e) => setNewComp({...newComp, product_id: e.target.value})} 
+                  style={{ height: 32, border: '1px solid var(--border)', borderRadius: 6, width: '100%', fontSize: 12 }}>
+                  <option value="">Add item...</option>
+                  {products.map(p => <option key={p.product_id} value={p.product_id}>{p.product_code}</option>)}
+                </select>
+              </td>
+              <td style={{ padding: '12px 8px' }}>
+                <input placeholder="Qty" value={newComp.quantity} onChange={(e) => setNewComp({...newComp, quantity: e.target.value})}
+                  style={{ height: 32, border: '1px solid var(--border)', borderRadius: 6, width: 60, padding: '0 8px', fontSize: 12 }} />
+              </td>
+              <td style={{ padding: '12px 8px' }}>
+                <button onClick={addComponent} style={{ background: 'var(--cerulean)', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 12px', fontSize: 11, cursor: 'pointer' }}>Add</button>
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            {(bom.operations || []).sort((a, b) => a.sequence_order - b.sequence_order).map((op) => (
-              <tr key={op.operation_id} className="border-b border-gray-50">
-                <td className="py-1.5 text-gray-700">{op.work_center}</td>
-                <td className="py-1.5 text-gray-700">{op.operation_time_mins}</td>
-                <td className="py-1.5 text-gray-500">{op.sequence_order}</td>
-                <td className="py-1.5">
-                  <button onClick={() => removeOperation(op.operation_id)} className="text-red-400 hover:text-red-600 text-xs">Remove</button>
-                </td>
-              </tr>
-            ))}
           </tbody>
         </table>
-        {/* Add operation row */}
-        <div className="flex gap-2 items-end">
-          <input
-            type="text" placeholder="Work Center"
-            value={newOp.work_center}
-            onChange={(e) => setNewOp((f) => ({ ...f, work_center: e.target.value }))}
-            className="flex-1 border border-gray-300 rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-400"
-          />
-          <input
-            type="number" min="1" placeholder="Mins"
-            value={newOp.operation_time_mins}
-            onChange={(e) => setNewOp((f) => ({ ...f, operation_time_mins: e.target.value }))}
-            className="w-20 border border-gray-300 rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-400"
-          />
-          <input
-            type="number" min="1" placeholder="Seq"
-            value={newOp.sequence_order}
-            onChange={(e) => setNewOp((f) => ({ ...f, sequence_order: e.target.value }))}
-            className="w-16 border border-gray-300 rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-400"
-          />
-          <button
-            onClick={addOperation}
-            className="bg-green-500 hover:bg-green-600 text-white text-xs font-semibold px-3 py-1.5 rounded transition"
-          >
-            Add
-          </button>
+
+        {/* Operations Table Pattern */}
+        <div style={{ marginTop: 24 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Work Operations</div>
+          <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 20 }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                <th style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Work Center</th>
+                <th style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Time (mins)</th>
+                <th style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Sequence</th>
+                <th style={{ padding: '8px 12px' }} />
+              </tr>
+            </thead>
+            <tbody>
+              {(bom.operations || []).sort((a, b) => a.sequence_order - b.sequence_order).map((op) => (
+                <tr key={op.operation_id} style={{ borderBottom: '1px solid var(--bg-muted)' }}>
+                  <td style={{ padding: '8px 12px', fontSize: 13 }}>{op.work_center}</td>
+                  <td style={{ padding: '8px 12px', fontSize: 13 }}>{op.operation_time_mins}</td>
+                  <td style={{ padding: '8px 12px', fontSize: 13 }}>{op.sequence_order}</td>
+                  <td style={{ padding: '8px 12px', textAlign: 'right' }}>
+                    <button onClick={() => api.delete(`/boms/${bomId}/operations/${op.operation_id}`).then(fetchBom)} 
+                      style={{ border: 'none', background: 'transparent', color: 'var(--punch-red)', fontSize: 11, cursor: 'pointer' }}>Remove</button>
+                  </td>
+                </tr>
+              ))}
+              <tr>
+                <td style={{ padding: '12px 8px' }}>
+                  <input placeholder="Work Center" value={newOp.work_center} onChange={(e) => setNewOp({...newOp, work_center: e.target.value})}
+                    style={{ height: 32, border: '1px solid var(--border)', borderRadius: 6, width: '100%', padding: '0 8px', fontSize: 12 }} />
+                </td>
+                <td style={{ padding: '12px 8px' }}>
+                  <input placeholder="Minutes" type="number" value={newOp.operation_time_mins} onChange={(e) => setNewOp({...newOp, operation_time_mins: e.target.value})}
+                    style={{ height: 32, border: '1px solid var(--border)', borderRadius: 6, width: 80, padding: '0 8px', fontSize: 12 }} />
+                </td>
+                <td style={{ padding: '12px 8px' }}>
+                  <input placeholder="Seq" type="number" value={newOp.sequence_order} onChange={(e) => setNewOp({...newOp, sequence_order: e.target.value})}
+                    style={{ height: 32, border: '1px solid var(--border)', borderRadius: 6, width: 60, padding: '0 8px', fontSize: 12 }} />
+                </td>
+                <td style={{ padding: '12px 8px' }}>
+                  <button onClick={addOperation} style={{ background: 'var(--cerulean)', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 12px', fontSize: 11, cursor: 'pointer' }}>Add</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
+
+        {error && (
+          <div style={{ background: 'var(--punch-red-light)', border: '1px solid var(--punch-red-border)', color: 'var(--punch-red)', borderRadius: 8, padding: '10px 12px', fontSize: 12, marginTop: 12 }}>
+            {error}
+          </div>
+        )}
       </div>
     </div>
   )

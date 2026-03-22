@@ -48,6 +48,25 @@ async def create_eco(
         created_by=current_user.user_id,
     )
 
+    # For Product ECOs, snapshot the current ProductVersion state as the "before" baseline
+    if payload.eco_type == "Product" and payload.target_product_id:
+        from app.models.product import ProductVersion
+        pv_result = await db.execute(
+            select(ProductVersion).where(
+                ProductVersion.product_id == payload.target_product_id,
+                ProductVersion.status == "Active",
+                ProductVersion.is_latest == True,  # noqa: E712
+            )
+        )
+        pv_snap = pv_result.scalar_one_or_none()
+        if pv_snap:
+            eco.proposed_changes = {
+                "snapshot_product_name": pv_snap.product_name,
+                "snapshot_sale_price": float(pv_snap.sale_price) if pv_snap.sale_price is not None else None,
+                "snapshot_cost_price": float(pv_snap.cost_price) if pv_snap.cost_price is not None else None,
+                "snapshot_attachments_url": pv_snap.attachments_url,
+            }
+
     # For BoM ECOs, snapshot the current BoM state as the "before" baseline
     if payload.eco_type == "BoM" and payload.target_bom_id:
         bom_result = await db.execute(
@@ -320,26 +339,43 @@ async def get_eco_diff(
     if eco is None:
         raise HTTPException(status_code=404, detail="ECO not found")
 
-    # Fetch current active product version data
+    # For Product ECOs, use snapshots if available; otherwise fetch current version
     current_data = {}
     if eco.target_product_id:
-        pv_result = await db.execute(
-            select(ProductVersion).where(
-                ProductVersion.product_id == eco.target_product_id,
-                ProductVersion.status == "Active",
-                ProductVersion.is_latest == True,  # noqa: E712
-            )
-        )
-        pv = pv_result.scalar_one_or_none()
-        if pv:
+        proposed = eco.proposed_changes or {}
+        # If snapshots exist (indicating a new ECO with captured baseline), use them
+        if proposed.get("snapshot_sale_price") is not None or proposed.get("snapshot_cost_price") is not None:
             current_data = {
-                "product_name": pv.product_name,
-                "sale_price": float(pv.sale_price) if pv.sale_price is not None else None,
-                "cost_price": float(pv.cost_price) if pv.cost_price is not None else None,
-                "attachments_url": pv.attachments_url,
+                "product_name": proposed.get("snapshot_product_name"),
+                "sale_price": proposed.get("snapshot_sale_price"),
+                "cost_price": proposed.get("snapshot_cost_price"),
+                "attachments_url": proposed.get("snapshot_attachments_url"),
             }
+        else:
+            # For legacy ECOs without snapshots, fetch current active product version
+            pv_result = await db.execute(
+                select(ProductVersion).where(
+                    ProductVersion.product_id == eco.target_product_id,
+                    ProductVersion.status == "Active",
+                    ProductVersion.is_latest == True,  # noqa: E712
+                )
+            )
+            pv = pv_result.scalar_one_or_none()
+            if pv:
+                current_data = {
+                    "product_name": pv.product_name,
+                    "sale_price": float(pv.sale_price) if pv.sale_price is not None else None,
+                    "cost_price": float(pv.cost_price) if pv.cost_price is not None else None,
+                    "attachments_url": pv.attachments_url,
+                }
 
-    proposed = eco.proposed_changes or {}
+    # Extract just the proposed values (exclude snapshots)
+    proposed = {}
+    if eco.proposed_changes:
+        for key, value in eco.proposed_changes.items():
+            if not key.startswith("snapshot_"):
+                proposed[key] = value
+
     diff_fields = compute_diff(current_data, proposed)
 
     return [

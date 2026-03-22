@@ -1,3 +1,100 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* Brand Colors */
+  --punch-red:          #e63946;
+  --punch-red-hover:    #cc2f3b;
+  --punch-red-light:    #fef2f2;
+  --punch-red-border:   #fecaca;
+
+  --honeydew:           #f1faee;
+  --frosted-blue:       #a8dadc;
+  --cerulean:           #457b9d;
+  --cerulean-hover:     #356080;
+  --cerulean-light:     #e8f4f8;
+  --cerulean-border:    #a8dadc;
+
+  --oxford-navy:        #1d3557;
+  --oxford-navy-hover:  #243f6a;
+
+  /* Surfaces & Backgrounds */
+  --surface:            #ffffff;
+  --bg-page:            #f1faee;
+  --bg-subtle:          #f8fafc;
+  --bg-muted:           #f1f5f9;
+
+  /* Borders */
+  --border:             #e2e8f0;
+  --border-strong:      #cbd5e1;
+
+  /* Text */
+  --text-primary:       #1d3557;
+  --text-secondary:     #64748b;
+  --text-muted:         #94a3b8;
+  --text-placeholder:   #b0bec5;
+
+  /* Semantic Status */
+  --status-done-dot:    #22c55e;
+  --status-done-text:   #15803d;
+  --status-done-bg:     #f0fdf4;
+}
+
+/* Base Reset */
+html, body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Global Transitions */
+button, a, input, select, textarea {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Global Animations */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+/* Focus States */
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--cerulean) !important;
+  box-shadow: 0 0 0 3px rgba(69, 123, 157, 0.15);
+  background-color: var(--surface) !important;
+}
+
+/* Scrollbar Styling (Optional but recommended) */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-page);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}

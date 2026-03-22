@@ -3,12 +3,22 @@ import { useNavigate } from 'react-router-dom'
 import api from '../../api/client'
 import useAuthStore from '../../store/authStore'
 
+// Zero-install SVG Icons
+const PlayIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+)
+const SaveIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+)
+const InfoIcon = () => (
+  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{opacity:0.6}}><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+)
+
 export default function EcoCreateForm() {
   const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
   const [products, setProducts] = useState([])
   const [boms, setBoms] = useState([])
-  const [users, setUsers] = useState([])
   const [form, setForm] = useState({
     title: '',
     eco_type: 'Bill of Materials',
@@ -18,7 +28,7 @@ export default function EcoCreateForm() {
     version_update_toggle: false,
     effective_date: '',
   })
-  const [savedEco, setSavedEco] = useState(null) // eco saved but not started
+  const [savedEco, setSavedEco] = useState(null)
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
   const [starting, setStarting] = useState(false)
@@ -28,7 +38,6 @@ export default function EcoCreateForm() {
 
   useEffect(() => {
     api.get('/products/').then((res) => setProducts(res.data))
-    // Pre-fill user with logged-in user
     setForm((f) => ({ ...f, user_id: user?.user_id || '' }))
   }, [user])
 
@@ -68,7 +77,6 @@ export default function EcoCreateForm() {
     setSaving(true)
     try {
       if (savedEco) {
-        // Update existing draft
         const res = await api.put(`/ecos/${savedEco.eco_id}`, {
           title: form.title,
           version_update_toggle: form.version_update_toggle,
@@ -89,7 +97,6 @@ export default function EcoCreateForm() {
 
   const handleStart = async () => {
     setError('')
-    // Save first if not saved
     let eco = savedEco
     if (!eco) {
       setSaving(true)
@@ -119,151 +126,201 @@ export default function EcoCreateForm() {
 
   if (!canCreate) {
     return (
-      <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-6 text-sm">
+      <div style={{ background: 'var(--punch-red-light)', border: '1px solid var(--punch-red-border)', color: 'var(--punch-red)', borderRadius: 12, padding: '20px 24px', fontSize: 13, fontWeight: 500 }}>
         Access Denied — only Admin and Engineering Users can create ECOs.
       </div>
     )
   }
 
-  const ro = isStarted // readonly after start
-  const inputCls = `w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 ${ro ? 'bg-gray-50 text-gray-500 border-gray-200 cursor-not-allowed' : 'border-gray-300'}`
-  const selectCls = inputCls
+  const ro = isStarted
+  const commonInputStyle = {
+    height: 36,
+    padding: '0 12px',
+    border: '1px solid var(--border)',
+    borderRadius: 8,
+    background: ro ? 'var(--bg-muted)' : 'var(--bg-subtle)',
+    fontSize: 13,
+    color: ro ? 'var(--text-secondary)' : 'var(--text-primary)',
+    width: '100%',
+    outline: 'none',
+    cursor: ro ? 'not-allowed' : 'text',
+  }
 
   return (
-    <div className="max-w-xl">
-      {/* Action buttons */}
-      <div className="flex items-center gap-2 mb-4">
-        <button
-          onClick={handleStart}
-          disabled={starting || saving || ro}
-          className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-1.5 rounded transition disabled:opacity-50"
-        >
-          {starting ? 'Starting...' : 'Start'}
-        </button>
-        <button
-          onClick={handleSave}
-          disabled={saving || starting || ro}
-          className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm font-medium px-4 py-1.5 rounded transition disabled:opacity-50"
-        >
-          {saving ? 'Saving...' : 'Save'}
-        </button>
-        {savedEco && (
-          <span className="ml-2 flex items-center gap-1.5 text-xs text-gray-500">
-            <span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block" />
-            New
-          </span>
-        )}
-      </div>
-
-      {error && (
-        <div className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">{error}</div>
-      )}
-
-      <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-4">
-        {/* Title */}
-        <div className="flex items-center gap-4">
-          <label className="w-36 text-sm text-gray-600 flex-shrink-0">Title*</label>
-          <input
-            value={form.title}
-            onChange={set('title')}
-            disabled={ro}
-            required
-            className={inputCls}
-          />
-        </div>
-
-        {/* ECO Type */}
-        <div className="flex items-center gap-4">
-          <label className="w-36 text-sm text-gray-600 flex-shrink-0">ECO Type*</label>
-          <select
-            value={form.eco_type}
-            onChange={set('eco_type')}
-            disabled={ro || !!savedEco}
-            className={selectCls}
-          >
-            <option value="Bill of Materials">Bill of Materials</option>
-            <option value="Product">Product</option>
-          </select>
-        </div>
-
-        {/* Product */}
-        <div className="flex items-center gap-4">
-          <label className="w-36 text-sm text-gray-600 flex-shrink-0">Product*</label>
-          <select
-            value={form.target_product_id}
-            onChange={set('target_product_id')}
-            disabled={ro || !!savedEco}
-            required
-            className={selectCls}
-          >
-            <option value="">Select product...</option>
-            {products.map((p) => (
-              <option key={p.product_id} value={p.product_id}>
-                {p.active_version?.product_name || p.product_code}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Bill of Materials — only if BoM type */}
-        {form.eco_type === 'Bill of Materials' && (
-          <div className="flex items-center gap-4">
-            <label className="w-36 text-sm text-gray-600 flex-shrink-0">Bill of Materials*</label>
-            <select
-              value={form.target_bom_id}
-              onChange={set('target_bom_id')}
-              disabled={ro || !!savedEco}
-              required
-              className={selectCls}
+    <div style={{ background: 'var(--bg-page)', minHeight: '100vh', fontFamily: "'Inter', sans-serif" }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 32px' }}>
+        
+        {/* Header Block */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24 }}>
+          <div>
+            <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.4px', margin: 0 }}>
+              Create Engineering Change Order
+            </h1>
+            <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>
+              Define change parameters and target products
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            {savedEco && (
+              <span style={{ 
+                display: 'inline-flex', 
+                alignItems: 'center', 
+                gap: 6, 
+                padding: '3px 10px', 
+                borderRadius: 20, 
+                background: 'var(--bg-muted)', 
+                color: 'var(--text-secondary)', 
+                fontSize: 12, 
+                fontWeight: 500,
+                marginRight: 8
+              }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--text-muted)', flexShrink: 0 }}/>
+                Draft
+              </span>
+            )}
+            <button
+              onClick={handleSave}
+              disabled={saving || starting || ro}
+              style={{ background: 'var(--surface)', color: 'var(--text-primary)', fontSize: 12.5, fontWeight: 500, height: 36, padding: '0 16px', borderRadius: 8, border: '1px solid var(--border)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, opacity: (saving || starting || ro) ? 0.5 : 1 }}
             >
-              <option value="">Select BoM...</option>
-              {boms.map((b) => (
-                <option key={b.bom_id} value={b.bom_id}>
-                  {b.product_name || b.bom_version}
-                </option>
-              ))}
-            </select>
+              <SaveIcon /> {saving ? 'Saving...' : 'Save Draft'}
+            </button>
+            <button
+              onClick={handleStart}
+              disabled={starting || saving || ro}
+              style={{ background: 'var(--punch-red)', color: '#ffffff', fontSize: 12.5, fontWeight: 600, height: 36, padding: '0 16px', borderRadius: 8, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, opacity: (starting || saving || ro) ? 0.5 : 1 }}
+            >
+              <PlayIcon /> {starting ? 'Starting...' : 'Start ECO'}
+            </button>
+          </div>
+        </div>
+
+        {error && (
+          <div style={{ background: 'var(--punch-red-light)', border: '1px solid var(--punch-red-border)', color: 'var(--punch-red)', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 12, fontWeight: 500 }}>
+            {error}
           </div>
         )}
 
-        {/* User */}
-        <div className="flex items-center gap-4">
-          <label className="w-36 text-sm text-gray-600 flex-shrink-0">User*</label>
-          <input
-            value={user?.login_id || ''}
-            disabled
-            className={`${inputCls} bg-gray-50`}
-          />
+        {/* Form Card */}
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '24px', maxWidth: 600 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            
+            {/* Title */}
+            <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr', alignItems: 'center', gap: 16 }}>
+              <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)' }}>Title*</label>
+              <input
+                value={form.title}
+                onChange={set('title')}
+                disabled={ro}
+                required
+                placeholder="e.g. PCB Component Upgrade"
+                style={commonInputStyle}
+              />
+            </div>
+
+            {/* ECO Type */}
+            <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr', alignItems: 'center', gap: 16 }}>
+              <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)' }}>ECO Type*</label>
+              <select
+                value={form.eco_type}
+                onChange={set('eco_type')}
+                disabled={ro || !!savedEco}
+                style={{ ...commonInputStyle, cursor: (ro || !!savedEco) ? 'not-allowed' : 'pointer' }}
+              >
+                <option value="Bill of Materials">Bill of Materials</option>
+                <option value="Product">Product</option>
+              </select>
+            </div>
+
+            {/* Product */}
+            <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr', alignItems: 'center', gap: 16 }}>
+              <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)' }}>Target Product*</label>
+              <select
+                value={form.target_product_id}
+                onChange={set('target_product_id')}
+                disabled={ro || !!savedEco}
+                required
+                style={{ ...commonInputStyle, cursor: (ro || !!savedEco) ? 'not-allowed' : 'pointer' }}
+              >
+                <option value="">Select product...</option>
+                {products.map((p) => (
+                  <option key={p.product_id} value={p.product_id}>
+                    {p.active_version?.product_name || p.product_code}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Bill of Materials — conditional */}
+            {form.eco_type === 'Bill of Materials' && (
+              <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr', alignItems: 'center', gap: 16 }}>
+                <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)' }}>Bill of Materials*</label>
+                <select
+                  value={form.target_bom_id}
+                  onChange={set('target_bom_id')}
+                  disabled={ro || !!savedEco}
+                  required
+                  style={{ ...commonInputStyle, cursor: (ro || !!savedEco) ? 'not-allowed' : 'pointer' }}
+                >
+                  <option value="">Select BoM...</option>
+                  {boms.map((b) => (
+                    <option key={b.bom_id} value={b.bom_id}>
+                      {b.product_name || b.bom_version}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Effective Date */}
+            <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr', alignItems: 'center', gap: 16 }}>
+              <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)' }}>Effective Date</label>
+              <input
+                type="datetime-local"
+                value={form.effective_date}
+                onChange={set('effective_date')}
+                disabled={ro}
+                style={commonInputStyle}
+              />
+            </div>
+
+            {/* Version Update Toggle */}
+            <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr', alignItems: 'center', gap: 16 }}>
+              <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)' }}>Increment Version</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <input
+                  type="checkbox"
+                  checked={form.version_update_toggle}
+                  onChange={set('version_update_toggle')}
+                  disabled={ro}
+                  style={{ width: 16, height: 16, cursor: ro ? 'not-allowed' : 'pointer', accentColor: 'var(--punch-red)' }}
+                />
+                <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Automatically update version on approval</span>
+              </div>
+            </div>
+
+            <div style={{ height: 1, background: 'var(--border)', margin: '8px 0' }} />
+
+            {/* User Info - Personalization Invisible per Stage 6 */}
+            <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr', alignItems: 'center', gap: 16 }}>
+              <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)' }}>Originator</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--bg-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: 'var(--text-secondary)' }}>
+                   {user?.login_id?.substring(0,2).toUpperCase() || '??'}
+                </div>
+                <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{user?.login_id}</span>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Effective Date */}
-        <div className="flex items-center gap-4">
-          <label className="w-36 text-sm text-gray-600 flex-shrink-0">Effective Date</label>
-          <input
-            type="datetime-local"
-            value={form.effective_date}
-            onChange={set('effective_date')}
-            disabled={ro}
-            className={inputCls}
-          />
-        </div>
-
-        {/* Version Update */}
-        <div className="flex items-center gap-4">
-          <label className="w-36 text-sm text-gray-600 flex-shrink-0">Version Update</label>
-          <input
-            type="checkbox"
-            checked={form.version_update_toggle}
-            onChange={set('version_update_toggle')}
-            disabled={ro}
-            className="w-4 h-4 text-blue-600 rounded"
-          />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 20, color: 'var(--text-muted)' }}>
+          <InfoIcon />
+          <p style={{ fontSize: 12, margin: 0 }}>
+            Save draft to preserve changes. Once the ECO is <strong>Started</strong>, core parameters become permanent.
+          </p>
         </div>
       </div>
-
-      <p className="text-xs text-gray-400 mt-3">
-        * Mandatory fields. Fill and save before clicking Start. Once started, all fields are readonly.
-      </p>
     </div>
   )
 }
