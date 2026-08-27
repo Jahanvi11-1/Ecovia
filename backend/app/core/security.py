@@ -11,6 +11,17 @@ ALGORITHM = "HS256"
 DEFAULT_EXPIRE_MINUTES = 60
 
 
+def _get_secret_key() -> str:
+    """Return the signing key and refuse an unsafe production configuration."""
+    secret_key = os.getenv("SECRET_KEY")
+    if secret_key:
+        return secret_key
+    if os.getenv("ENVIRONMENT", "development").lower() == "production":
+        raise RuntimeError("SECRET_KEY must be set when ENVIRONMENT=production")
+    # Local development only.  This must never be used by a deployed service.
+    return "development-only-change-me"
+
+
 def hash_password(password: str) -> str:
     """Return a bcrypt hash of *password*."""
     return _pwd_context.hash(password)
@@ -23,7 +34,7 @@ def verify_password(plain: str, hashed: str) -> bool:
 
 def create_access_token(data: dict, expires_delta: timedelta = None) -> str:
     """Create a signed JWT containing *data* with an expiry claim."""
-    secret_key = os.getenv("SECRET_KEY", "changeme")
+    secret_key = _get_secret_key()
     payload = data.copy()
     expire = datetime.now(timezone.utc) + (
         expires_delta if expires_delta is not None else timedelta(minutes=DEFAULT_EXPIRE_MINUTES)
@@ -34,7 +45,7 @@ def create_access_token(data: dict, expires_delta: timedelta = None) -> str:
 
 def decode_access_token(token: str) -> dict:
     """Decode and verify a JWT.  Raises HTTP 401 on any failure."""
-    secret_key = os.getenv("SECRET_KEY", "changeme")
+    secret_key = _get_secret_key()
     try:
         return jwt.decode(token, secret_key, algorithms=[ALGORITHM])
     except JWTError:

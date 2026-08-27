@@ -4,19 +4,20 @@ from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 
 from app.database import get_db
-from app.core.deps import get_current_user
+from app.core.deps import get_current_user, require_roles
 from app.models.product import Product, ProductVersion
 from app.models.user import User
 from app.schemas.product import ProductOut, ProductVersionOut, ProductCreate, PaginatedProductsOut
 
 router = APIRouter(prefix="/api/products", tags=["products"])
+_engineering_admin = require_roles("Admin", "Engineering User")
 
 
 @router.post("/", response_model=ProductOut, status_code=status.HTTP_201_CREATED)
 async def create_product(
     payload: ProductCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(_engineering_admin),
 ):
     # Check product_code uniqueness
     result = await db.execute(select(Product).where(Product.product_code == payload.product_code))

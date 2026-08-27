@@ -1,6 +1,6 @@
 from sqlalchemy import (
     Boolean, CheckConstraint, Column, DateTime, ForeignKey,
-    Integer, String, Text, func,
+    Integer, String, Text, UniqueConstraint, func,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
@@ -60,7 +60,22 @@ class StageApprovalRule(Base):
 
     __table_args__ = (
         CheckConstraint("approval_category IN ('Required', 'Optional')", name="approval_category_check"),
+        UniqueConstraint("stage_id", "user_id", name="uq_stage_approval_user"),
     )
+
+
+class EcoApproval(Base):
+    """An immutable record of one user's approval for one ECO stage."""
+
+    __tablename__ = "eco_approvals"
+
+    approval_id = Column(Integer, primary_key=True, autoincrement=True)
+    eco_id = Column(Integer, ForeignKey("ecos.eco_id", ondelete="CASCADE"), nullable=False)
+    stage_id = Column(Integer, ForeignKey("eco_stages.stage_id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
+    created_at = Column(DateTime, server_default=func.now())
+
+    __table_args__ = (UniqueConstraint("eco_id", "stage_id", "user_id", name="uq_eco_stage_approval_user"),)
 
 
 class EcoLog(Base):

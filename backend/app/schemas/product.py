@@ -1,13 +1,13 @@
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ProductCreate(BaseModel):
     product_code: str
     product_name: str
-    sale_price: Optional[float] = None
-    cost_price: Optional[float] = None
+    sale_price: Optional[float] = Field(default=None, ge=0)
+    cost_price: Optional[float] = Field(default=None, ge=0)
     attachments_url: Optional[str] = None
 
 

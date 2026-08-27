@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -7,7 +8,7 @@ from sqlalchemy.orm import selectinload
 from app.database import get_db
 from app.core.deps import get_current_user, require_roles
 from app.core.stage_machine import stage_machine
-from app.models.eco import Eco, EcoStage, EcoLog
+from app.models.eco import Eco, EcoStage, EcoLog, EcoApproval, StageApprovalRule
 from app.models.bom import Bom, BomComponent, BomOperation
 from app.models.user import User
 from app.schemas.eco import EcoCreate, EcoUpdate, EcoOut
@@ -65,6 +66,7 @@ async def create_eco(
                 "snapshot_sale_price": float(pv_snap.sale_price) if pv_snap.sale_price is not None else None,
                 "snapshot_cost_price": float(pv_snap.cost_price) if pv_snap.cost_price is not None else None,
                 "snapshot_attachments_url": pv_snap.attachments_url,
+                **(payload.proposed_changes or {}),
             }
 
     # For BoM ECOs, snapshot the current BoM state as the "before" baseline
@@ -87,6 +89,7 @@ async def create_eco(
                      "operation_time_mins": op.operation_time_mins, "sequence_order": op.sequence_order}
                     for op in bom_snap.operations
                 ],
+                **(payload.proposed_changes or {}),
             }
     db.add(eco)
     await db.commit()
@@ -137,8 +140,10 @@ async def update_eco(
     eco = result.scalar_one_or_none()
     if eco is None:
         raise HTTPException(status_code=404, detail="ECO not found")
-    if eco.status in ("Applied", "Rejected"):
-        raise HTTPException(status_code=409, detail="Cannot edit a terminal ECO")
+    if eco.status in ("Applied", "Rejected") or eco.is_started:
+        raise HTTPException(status_code=409, detail="Only an unstarted draft ECO can be edited")
+    if current_user.role != "Admin" and eco.created_by != current_user.user_id:
+        raise HTTPException(status_code=403, detail="Only the ECO creator can edit this draft")
 
     for field, value in payload.model_dump(exclude_none=True).items():
         if field == 'effective_date' and value is not None:
@@ -195,6 +200,10 @@ async def start_eco(
         raise HTTPException(status_code=404, detail="ECO not found")
     if eco.is_started:
         raise HTTPException(status_code=409, detail="ECO already started")
+    if eco.status != "Open":
+        raise HTTPException(status_code=409, detail="Only open ECOs can be started")
+    if current_user.role != "Admin" and eco.created_by != current_user.user_id:
+        raise HTTPException(status_code=403, detail="Only the ECO creator can start this draft")
     eco.is_started = True
     await db.commit()
     return await _load_eco(eco_id, db)
@@ -212,10 +221,46 @@ async def approve_eco(
     eco = result.scalar_one_or_none()
     if eco is None:
         raise HTTPException(status_code=404, detail="ECO not found")
+    if not eco.is_started:
+        raise HTTPException(status_code=409, detail="Start the ECO before requesting approval")
     if stage_machine.is_terminal(eco.status):
         raise HTTPException(status_code=409, detail="ECO is in a terminal state", headers={"X-Error-Code": "ECO_TERMINAL_STATE"})
     if not eco.current_stage or not eco.current_stage.requires_approval:
         raise HTTPException(status_code=400, detail="Current stage does not require approval. Use /validate instead.")
+
+    required_rules = (await db.execute(
+        select(StageApprovalRule).where(
+            StageApprovalRule.stage_id == eco.current_stage_id,
+            StageApprovalRule.approval_category == "Required",
+        )
+    )).scalars().all()
+    required_user_ids = {rule.user_id for rule in required_rules}
+    if required_user_ids and current_user.user_id not in required_user_ids:
+        raise HTTPException(status_code=403, detail="You are not an assigned approver for this stage")
+
+    if required_user_ids:
+        prior_approval = await db.execute(select(EcoApproval).where(
+            EcoApproval.eco_id == eco_id,
+            EcoApproval.stage_id == eco.current_stage_id,
+            EcoApproval.user_id == current_user.user_id,
+        ))
+        if prior_approval.scalar_one_or_none() is not None:
+            raise HTTPException(status_code=409, detail="You have already approved this ECO stage")
+        db.add(EcoApproval(eco_id=eco_id, stage_id=eco.current_stage_id, user_id=current_user.user_id))
+        await db.flush()
+        approvals = await db.execute(select(EcoApproval.user_id).where(
+            EcoApproval.eco_id == eco_id,
+            EcoApproval.stage_id == eco.current_stage_id,
+        ))
+        approved_user_ids = set(approvals.scalars().all())
+        if not required_user_ids.issubset(approved_user_ids):
+            await _write_log(
+                eco_id, eco.current_stage_id, current_user.user_id, "Approval recorded",
+                {"stage_id": eco.current_stage_id},
+                {"pending_approvers": sorted(required_user_ids - approved_user_ids)}, db,
+            )
+            await db.commit()
+            return await _load_eco(eco_id, db)
 
     stages = await _get_all_stages(db)
     old_stage_id = eco.current_stage_id
@@ -235,7 +280,7 @@ async def approve_eco(
 async def validate_eco(
     eco_id: int,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(_eng_admin),
 ):
     result = await db.execute(
         select(Eco).where(Eco.eco_id == eco_id).options(selectinload(Eco.current_stage))
@@ -243,6 +288,8 @@ async def validate_eco(
     eco = result.scalar_one_or_none()
     if eco is None:
         raise HTTPException(status_code=404, detail="ECO not found")
+    if not eco.is_started:
+        raise HTTPException(status_code=409, detail="Start the ECO before validation")
     if stage_machine.is_terminal(eco.status):
         raise HTTPException(status_code=409, detail="ECO is in a terminal state", headers={"X-Error-Code": "ECO_TERMINAL_STATE"})
     if eco.current_stage and eco.current_stage.requires_approval:
@@ -283,6 +330,8 @@ async def apply_eco(
             detail="Only ECOs with status 'Validated' can be applied",
             headers={"X-Error-Code": "ECO_TERMINAL_STATE"},
         )
+    if eco.effective_date and eco.effective_date > datetime.now(timezone.utc).replace(tzinfo=None):
+        raise HTTPException(status_code=409, detail="This ECO cannot be applied before its effective date")
 
     old_status = eco.status
     await version_manager.apply_eco(eco, db)

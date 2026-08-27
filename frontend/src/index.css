@@ -52,6 +52,14 @@ html, body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+* {
+  box-sizing: border-box;
+}
+
+img, svg {
+  max-width: 100%;
+}
+
 /* Global Transitions */
 button, a, input, select, textarea {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -97,4 +105,33 @@ input:focus, select:focus, textarea:focus {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-muted);
+}
+
+/* The application began as a desktop-first UI with inline layout styles.
+   These safeguards make existing forms, cards, and tables usable while new
+   components are progressively moved to reusable responsive CSS classes. */
+@media (max-width: 767px) {
+  [style*="max-width: 1200px"] {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+
+  [style*="grid-template-columns"] {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  [style*="display: flex"] {
+    flex-wrap: wrap;
+  }
+
+  table[style*="border-collapse"] {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  input, select, textarea, button {
+    max-width: 100%;
+  }
 }

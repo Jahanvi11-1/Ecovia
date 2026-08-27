@@ -1,7 +1,9 @@
 import axios from 'axios'
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
+  // Vercel supplies this as https://api.example.com/api.  Locally the Vite
+  // proxy forwards the same /api paths to FastAPI.
+  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
 })
 
 // Attach JWT token from localStorage on every request

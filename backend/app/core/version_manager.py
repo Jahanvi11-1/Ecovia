@@ -1,15 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update
-
-from app.models.product import ProductVersion
-from app.models.eco import Eco
-
-
-class VersionManager:
-    """Handles atomic version transitions when an ECO is applied."""
-
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update
+from sqlalchemy import select
 
 from app.models.product import ProductVersion
 from app.models.bom import Bom, BomComponent, BomOperation
@@ -64,13 +54,15 @@ class VersionManager:
         if current_bom is None:
             return
 
-        # Snapshot current state before archiving
+        # Use the approved proposal when present; otherwise preserve the
+        # existing state.  The active BoM itself is never changed in place.
+        changes = eco.proposed_changes or {}
         old_version = current_bom.bom_version
-        old_components = [
+        old_components = changes.get("proposed_components") or [
             {"product_id": c.product_id, "quantity": float(c.quantity), "unit_of_measure": c.unit_of_measure}
             for c in current_bom.components
         ]
-        old_operations = [
+        old_operations = changes.get("proposed_operations") or [
             {"work_center": op.work_center, "operation_time_mins": op.operation_time_mins, "sequence_order": op.sequence_order}
             for op in current_bom.operations
         ]
@@ -124,28 +116,8 @@ class VersionManager:
         eco.target_bom_id = new_bom.bom_id
         await session.flush()
 
-        # Product ECOs — fetch current version BEFORE archiving so fields are never lost
-        result = await session.execute(
-            select(ProductVersion).where(
-                ProductVersion.product_id == eco.target_product_id,
-                ProductVersion.status == "Active",
-                ProductVersion.is_latest == True,  # noqa: E712
-            )
-        )
-        current = result.scalar_one_or_none()
-        # Snapshot fields we must preserve
-        prev_snapshot = {
-            "product_name": current.product_name if current else None,
-            "sale_price": current.sale_price if current else None,
-            "cost_price": current.cost_price if current else None,
-            "attachments_url": current.attachments_url if current else None,
-        }
-
-        if eco.version_update_toggle:
-            new_version_number = await self._archive_current_version(eco.target_product_id, session)
-            await self._create_new_version(eco, new_version_number, prev_snapshot, session)
-        else:
-            await self._patch_current_version(eco, session)
+        # This is intentionally the end of the BoM path.  A BoM ECO must not
+        # create or archive a ProductVersion.
 
     async def _archive_current_version(self, product_id: int, session: AsyncSession) -> int:
         """

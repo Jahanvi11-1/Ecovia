@@ -77,10 +77,10 @@ export default function BomCreateForm() {
         reference: form.reference || autoRef,
         quantity: parseFloat(form.quantity) || 1,
         unit_of_measure: form.unit_of_measure,
+        components: components.map((c) => ({ ...c, product_id: parseInt(c.product_id) })),
+        operations,
       })
       const bomId = res.data.bom_id
-      for (const c of components) { await api.post(`/boms/${bomId}/components`, c) }
-      for (const op of operations) { await api.post(`/boms/${bomId}/operations`, op) }
       navigate(`/boms/${bomId}`)
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to save BoM')

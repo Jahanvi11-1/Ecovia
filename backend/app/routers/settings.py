@@ -4,11 +4,11 @@ from sqlalchemy import select
 
 from app.database import get_db
 from app.core.deps import require_roles, get_current_user
-from app.models.eco import EcoStage, StageApprovalRule
+from app.models.eco import Eco, EcoStage, StageApprovalRule
 from app.models.user import User
 from app.schemas.eco_stage import (
     EcoStageCreate, EcoStageUpdate, EcoStageOut,
-    ApprovalRuleCreate, ApprovalRuleOut,
+    ApprovalRuleCreate, ApprovalRuleOut, UserRoleUpdate,
 )
 
 router = APIRouter(prefix="/api/settings", tags=["settings"])
@@ -21,7 +21,7 @@ _admin_only = require_roles("Admin")
 @router.get("/stages", response_model=list[EcoStageOut])
 async def list_stages(
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(_admin_only),
+    current_user=Depends(get_current_user),
 ):
     result = await db.execute(select(EcoStage).order_by(EcoStage.sequence_order))
     return [EcoStageOut.model_validate(s) for s in result.scalars().all()]
@@ -41,6 +41,10 @@ async def create_stage(
                 detail="A final stage already exists. Only one stage can be marked as final.",
                 headers={"X-Error-Code": "DUPLICATE_FINAL_STAGE"},
             )
+
+    duplicate = await db.execute(select(EcoStage).where(EcoStage.sequence_order == payload.sequence_order))
+    if duplicate.scalar_one_or_none() is not None:
+        raise HTTPException(status_code=409, detail="Stage sequence order must be unique")
 
     stage = EcoStage(**payload.model_dump())
     db.add(stage)
@@ -72,6 +76,14 @@ async def update_stage(
                 headers={"X-Error-Code": "DUPLICATE_FINAL_STAGE"},
             )
 
+    if payload.sequence_order is not None and payload.sequence_order != stage.sequence_order:
+        duplicate = await db.execute(select(EcoStage).where(
+            EcoStage.sequence_order == payload.sequence_order,
+            EcoStage.stage_id != stage_id,
+        ))
+        if duplicate.scalar_one_or_none() is not None:
+            raise HTTPException(status_code=409, detail="Stage sequence order must be unique")
+
     for field, value in payload.model_dump(exclude_none=True).items():
         setattr(stage, field, value)
 
@@ -90,6 +102,11 @@ async def delete_stage(
     stage = result.scalar_one_or_none()
     if stage is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Stage not found")
+    if stage.is_final_stage:
+        raise HTTPException(status_code=409, detail="A final stage cannot be deleted; designate another final stage first")
+    in_use = await db.execute(select(Eco.eco_id).where(Eco.current_stage_id == stage_id).limit(1))
+    if in_use.scalar_one_or_none() is not None:
+        raise HTTPException(status_code=409, detail="Cannot delete a stage used by an ECO")
     await db.delete(stage)
     await db.commit()
 
@@ -145,6 +162,12 @@ async def add_stage_approval(
         user_id=payload.user_id,
         approval_category=payload.approval_category,
     )
+    existing_rule = await db.execute(select(StageApprovalRule).where(
+        StageApprovalRule.stage_id == stage_id,
+        StageApprovalRule.user_id == payload.user_id,
+    ))
+    if existing_rule.scalar_one_or_none() is not None:
+        raise HTTPException(status_code=409, detail="This user is already assigned to the stage")
     db.add(rule)
     await db.commit()
     await db.refresh(rule)
@@ -183,7 +206,24 @@ async def delete_stage_approval(
 @router.get("/users", response_model=list[dict])
 async def list_users(
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user),
+    current_user=Depends(_admin_only),
 ):
     result = await db.execute(select(User).order_by(User.login_id))
     return [{"user_id": u.user_id, "login_id": u.login_id, "role": u.role} for u in result.scalars().all()]
+
+
+@router.put("/users/{user_id}/role", response_model=dict)
+async def update_user_role(
+    user_id: int,
+    payload: UserRoleUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(_admin_only),
+):
+    if user_id == current_user.user_id and payload.role != "Admin":
+        raise HTTPException(status_code=409, detail="You cannot remove your own Admin role")
+    user = (await db.execute(select(User).where(User.user_id == user_id))).scalar_one_or_none()
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    user.role = payload.role
+    await db.commit()
+    return {"user_id": user.user_id, "login_id": user.login_id, "role": user.role}

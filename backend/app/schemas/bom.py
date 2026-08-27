@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class BomComponentOut(BaseModel):
@@ -8,7 +8,7 @@ class BomComponentOut(BaseModel):
     component_id: int
     bom_id: int
     product_id: Optional[int] = None
-    quantity: float
+    quantity: float = Field(gt=0)
     unit_of_measure: str
 
 
@@ -23,8 +23,8 @@ class BomOperationOut(BaseModel):
     operation_id: int
     bom_id: int
     work_center: str
-    operation_time_mins: int
-    sequence_order: int
+    operation_time_mins: int = Field(gt=0)
+    sequence_order: int = Field(ge=1)
 
 
 class BomOperationCreate(BaseModel):
@@ -60,5 +60,7 @@ class BomCreate(BaseModel):
     product_version_id: int
     bom_version: Optional[str] = None
     reference: Optional[str] = None
-    quantity: float = 1.0
+    quantity: float = Field(default=1.0, gt=0)
     unit_of_measure: str = "Units"
+    components: list[BomComponentCreate] = Field(default_factory=list)
+    operations: list[BomOperationCreate] = Field(default_factory=list)

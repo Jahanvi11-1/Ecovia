@@ -2,8 +2,6 @@ import React, { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import api from '../../api/client'
 
-const ROLES = ['Engineering User', 'Approver', 'Operations User', 'Admin']
-
 // Inline SVG Icons to avoid lucide-react dependency
 const UserPlusIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -19,7 +17,7 @@ const LoaderIcon = () => (
 
 export default function SignupPage() {
   const navigate = useNavigate()
-  const [form, setForm] = useState({ login_id: '', email: '', password: '', role: 'Engineering User' })
+  const [form, setForm] = useState({ login_id: '', email: '', password: '' })
   const [errors, setErrors] = useState({})
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -124,19 +122,9 @@ export default function SignupPage() {
             {errors.password && <p style={{ color: 'var(--punch-red)', fontSize: 11, marginTop: 4 }}>{errors.password}</p>}
           </div>
 
-          <div>
-            <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: 5 }}>
-              Role <span style={{ color: 'var(--punch-red)' }}>*</span>
-            </label>
-            <select
-              name="role"
-              value={form.role}
-              onChange={handleChange}
-              style={{ height: 36, padding: '0 12px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg-subtle)', fontSize: 13, color: 'var(--text-primary)', width: '100%', outline: 'none', cursor: 'pointer' }}
-            >
-              {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
-            </select>
-          </div>
+          <p style={{ color: 'var(--text-muted)', fontSize: 11, margin: 0 }}>
+            New accounts are created as Engineering Users. An administrator can assign another role if needed.
+          </p>
 
           <button
             type="submit"

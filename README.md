@@ -83,7 +83,11 @@ Start the server:
 uvicorn app.main:app --reload
 ```
 
-On first launch, Alembic runs `upgrade head` automatically and creates all tables. No manual migration step needed.
+Run migrations as a release step before starting the API:
+
+```bash
+alembic upgrade head
+```
 
 The API will be available at `http://localhost:8000`. Interactive docs at `http://localhost:8000/docs`.
 
@@ -143,3 +147,21 @@ The app will be available at `http://localhost:5173`.
 |---|---|---|
 | `DATABASE_URL` | Async PostgreSQL connection string | `postgresql+asyncpg://user:pass@localhost:5432/ecovia` |
 | `SECRET_KEY` | JWT signing secret | Any long random string |
+| `CORS_ORIGINS` | Comma-separated browser origins allowed to call the API | `https://your-app.vercel.app` |
+| `ENVIRONMENT` | Set to `production` on deployed services | `production` |
+
+## Render deployment
+
+The repository includes `render.yaml` for the backend. Create a Render Blueprint
+from this repository, then set `DATABASE_URL` to the Neon connection string and
+`CORS_ORIGINS` to the Vercel frontend URL. Render runs migrations as a pre-deploy
+step and serves `/health` as its health check. In Vercel, set
+`VITE_API_BASE_URL` to `https://<render-service>.onrender.com/api` and redeploy.
+
+## Release checklist
+
+Before every production release, test the application with an Admin, Engineering
+User, Approver, and Operations User. Confirm each restricted action returns HTTP
+403 when called directly by an unauthorized role; hiding a button in the browser
+is not a security control. Also verify the Product and BoM ECO flows through
+draft, start, approval, validation, application, audit log, and version history.

@@ -1,8 +1,5 @@
 import os
-import subprocess
-import sys
 from contextlib import asynccontextmanager
-from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,27 +11,10 @@ from app.routers.settings import router as settings_router
 from app.routers.ecos import router as ecos_router
 from app.routers.reports import router as reports_router
 
-# Resolve the backend/ directory (parent of app/)
-BACKEND_DIR = Path(__file__).resolve().parent.parent
-
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Run Alembic migrations on startup
-    result = subprocess.run(
-        [sys.executable, "-m", "alembic", "upgrade", "head"],
-        capture_output=True,
-        text=True,
-        cwd=str(BACKEND_DIR),
-    )
-
-    if result.returncode != 0:
-        print(f"Alembic migration failed:\n{result.stderr}", file=sys.stderr)
-        raise RuntimeError("Database migration failed on startup")
-
-    if result.stdout:
-        print(result.stdout)
-
+    # Migrations are a release operation, not a web-process startup action.
+    # Running them here causes races when a platform starts multiple workers.
     yield
 
 

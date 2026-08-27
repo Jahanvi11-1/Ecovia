@@ -8,6 +8,8 @@ class SignupRequest(BaseModel):
     login_id: str
     email: EmailStr
     password: str
+    # Public registration never grants privileges.  Administrators assign
+    # elevated roles through an authenticated administration workflow.
     role: str = "Engineering User"
 
     @field_validator("password")
@@ -27,8 +29,8 @@ class SignupRequest(BaseModel):
     @field_validator("role")
     @classmethod
     def validate_role(cls, v: str) -> str:
-        if v not in VALID_ROLES:
-            raise ValueError(f"Role must be one of: {', '.join(sorted(VALID_ROLES))}")
+        if v != "Engineering User":
+            raise ValueError("Public signup creates Engineering User accounts only")
         return v
 
 

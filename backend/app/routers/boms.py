@@ -4,13 +4,14 @@ from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 from typing import Optional
 from app.database import get_db
-from app.core.deps import get_current_user
+from app.core.deps import get_current_user, require_roles
 from app.models.bom import Bom, BomComponent, BomOperation
 from app.models.product import Product, ProductVersion
 from app.models.user import User
 from app.schemas.bom import BomOut, BomCreate, BomComponentOut, BomComponentCreate, BomOperationOut, BomOperationCreate, PaginatedBomsOut
 
 router = APIRouter(prefix="/api/boms", tags=["boms"])
+_engineering_admin = require_roles("Admin", "Engineering User")
 
 
 async def _bom_to_out(bom: Bom, db: AsyncSession) -> BomOut:
@@ -100,7 +101,7 @@ async def get_bom(
 async def create_bom(
     payload: BomCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(_engineering_admin),
 ):
     # Guard: only Active product versions can have new BoMs
     result = await db.execute(
@@ -153,6 +154,21 @@ async def create_bom(
         status='Active',
     )
     db.add(new_bom)
+    await db.flush()
+    for component in payload.components:
+        db.add(BomComponent(
+            bom_id=new_bom.bom_id,
+            product_id=component.product_id,
+            quantity=component.quantity,
+            unit_of_measure=component.unit_of_measure,
+        ))
+    for operation in payload.operations:
+        db.add(BomOperation(
+            bom_id=new_bom.bom_id,
+            work_center=operation.work_center,
+            operation_time_mins=operation.operation_time_mins,
+            sequence_order=operation.sequence_order,
+        ))
     await db.commit()
     await db.refresh(new_bom)
 
@@ -169,8 +185,11 @@ async def add_component(
     bom_id: int,
     payload: BomComponentCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(_engineering_admin),
 ):
+    raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Active BoMs are immutable. Propose changes through an ECO.")
+
+    # Kept below temporarily for future draft-BoM support.
     result = await db.execute(select(Bom).where(Bom.bom_id == bom_id))
     bom = result.scalar_one_or_none()
     if bom is None:
@@ -189,14 +208,21 @@ async def remove_component(
     bom_id: int,
     component_id: int,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(_engineering_admin),
 ):
+    raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Active BoMs are immutable. Propose changes through an ECO.")
+
+    # Kept below temporarily for future draft-BoM support.
     result = await db.execute(
         select(BomComponent).where(BomComponent.component_id == component_id, BomComponent.bom_id == bom_id)
     )
     comp = result.scalar_one_or_none()
     if comp is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Component not found")
+    bom_result = await db.execute(select(Bom).where(Bom.bom_id == bom_id))
+    bom = bom_result.scalar_one()
+    if bom.status == "Archived":
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Cannot modify an Archived BoM")
     await db.delete(comp)
     await db.commit()
 
@@ -206,8 +232,11 @@ async def add_operation(
     bom_id: int,
     payload: BomOperationCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(_engineering_admin),
 ):
+    raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Active BoMs are immutable. Propose changes through an ECO.")
+
+    # Kept below temporarily for future draft-BoM support.
     result = await db.execute(select(Bom).where(Bom.bom_id == bom_id))
     bom = result.scalar_one_or_none()
     if bom is None:
@@ -226,14 +255,21 @@ async def remove_operation(
     bom_id: int,
     operation_id: int,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(_engineering_admin),
 ):
+    raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Active BoMs are immutable. Propose changes through an ECO.")
+
+    # Kept below temporarily for future draft-BoM support.
     result = await db.execute(
         select(BomOperation).where(BomOperation.operation_id == operation_id, BomOperation.bom_id == bom_id)
     )
     op = result.scalar_one_or_none()
     if op is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Operation not found")
+    bom_result = await db.execute(select(Bom).where(Bom.bom_id == bom_id))
+    bom = bom_result.scalar_one()
+    if bom.status == "Archived":
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Cannot modify an Archived BoM")
     await db.delete(op)
     await db.commit()
 
@@ -249,8 +285,11 @@ async def update_component(
     component_id: int,
     payload: ComponentUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(_engineering_admin),
 ):
+    raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Active BoMs are immutable. Propose changes through an ECO.")
+
+    # Kept below temporarily for future draft-BoM support.
     # 1. Verify the BoM exists and is not Archived
     result = await db.execute(select(Bom).where(Bom.bom_id == bom_id))
     bom = result.scalar_one_or_none()
@@ -294,8 +333,11 @@ async def update_operation(
     operation_id: int,
     payload: OperationUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(_engineering_admin),
 ):
+    raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Active BoMs are immutable. Propose changes through an ECO.")
+
+    # Kept below temporarily for future draft-BoM support.
     # 1. Validation: Is the BoM Active?
     result = await db.execute(select(Bom).where(Bom.bom_id == bom_id))
     bom = result.scalar_one_or_none()

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import api from '../../api/client'
 import useAuthStore from '../../store/authStore'
 import EcoDiffView from '../eco/EcoDiffView'
+import BomProposalEditor from './BomProposalEditor'
 
 // Zero-install SVG Icons
 const ArrowLeftIcon = () => (
@@ -162,8 +163,8 @@ export default function EcoDetail() {
           <ProposedChangesEditor eco={eco} onSaved={fetchEco} />
         )}
 
-        {isBom && eco.target_bom_id && !isTerminal && (
-          <BomChangesEditor bomId={eco.target_bom_id} />
+        {isBom && eco.target_bom_id && !isTerminal && !eco.is_started && (
+          <BomProposalEditor eco={eco} onSaved={fetchEco} />
         )}
 
         {/* Comparison Section */}
