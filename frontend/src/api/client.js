@@ -1,17 +1,20 @@
 import axios from 'axios'
 
 const api = axios.create({
-  // Vercel supplies this as https://api.example.com/api.  Locally the Vite
-  // proxy forwards the same /api paths to FastAPI.
-  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
+  baseURL: `${import.meta.env.VITE_API_BASE_URL || ''}/api`,
+  headers: {
+    'Content-Type': 'application/json',
+  },
 })
 
 // Attach JWT token from localStorage on every request
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token')
+
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
+
   return config
 })
 
@@ -23,6 +26,7 @@ api.interceptors.response.use(
       localStorage.removeItem('token')
       window.location.href = '/login'
     }
+
     return Promise.reject(error)
   }
 )
