@@ -165,3 +165,6 @@ User, Approver, and Operations User. Confirm each restricted action returns HTTP
 403 when called directly by an unauthorized role; hiding a button in the browser
 is not a security control. Also verify the Product and BoM ECO flows through
 draft, start, approval, validation, application, audit log, and version history.
+<img width="8884" height="9505" alt="diagram (1)" src="https://github.com/user-attachments/assets/fa7f066a-9736-43e6-b741-a84b1fb62c29" />
+
+[![Architecture diagram of jahanvi11-1/ecovia](https://gitdiagram.com/jahanvi11-1/ecovia/diagram.png)](https://gitdiagram.com/jahanvi11-1/ecovia?utm_source=readme&utm_medium=picture)
